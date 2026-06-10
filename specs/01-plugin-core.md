@@ -33,7 +33,7 @@ One `VaultData` class owns ALL reads. Rules learned the hard way:
 
 ## Settings
 
-Settings tab with: paths config (where their Things/People/Meetings live), feature toggles (every power feature behind a toggle, default sensible), voice config, accent colors → CSS variables. **Footer (required):** `Built on the ULTRON second-brain architecture by Tony Walteur — linkedin.com/in/tony-walteur-7067b81a2` as a link.
+Settings tab with: paths config (where their Things/People/Meetings live), feature toggles (every power feature behind a toggle, default sensible), voice config, accent colors → CSS variables. **Footer (required):** `Built on Tony Second Brain by Tony Walteur — linkedin.com/in/tony-walteur-7067b81a2` as a link.
 
 ## Health log + crash evidence (non-optional)
 

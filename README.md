@@ -1,4 +1,4 @@
-# ULTRON — the agent-native second brain
+# Tony Second Brain — the agent-native vault, alive
 
 **An Obsidian vault that is alive.** A voice AI with a WebGL orb that *thinks visibly* — neural sparks crawl across your file tree as it reads your notes. A command-center dashboard where neglected clients drift toward the center of a radar and deadlines spawn raid bosses with real HP bars. Ghost files show you what's *missing* from your projects. A terminal-embedded AI pair that never loses your session.
 
@@ -28,8 +28,8 @@ Everything binds to **real data in your vault**. The #1 design law: *no theater*
 You don't clone-and-configure. You hand this repo to your coding agent:
 
 ```bash
-git clone https://github.com/twalteur/ultron-second-brain
-cd ultron-second-brain
+git clone https://github.com/mysticalsin/tony-second-brain
+cd tony-second-brain
 claude   # or codex, or any agentic CLI with file access
 ```
 
@@ -79,6 +79,6 @@ LICENSE                    ← MIT, with attribution request
 
 This blueprint is MIT-licensed. Keep the credit line visible in your build (the master prompt wires it into your plugin's settings footer and README automatically):
 
-> *Built on the ULTRON second-brain architecture by [Tony Walteur](https://www.linkedin.com/in/tony-walteur-7067b81a2/).*
+> *Built on Tony Second Brain by [Tony Walteur](https://www.linkedin.com/in/tony-walteur-7067b81a2/).*
 
 — Tony
