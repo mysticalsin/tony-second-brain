@@ -8,6 +8,10 @@ This is not a plugin you install. **It's a blueprint your AI agent builds — pe
 > Connect: **[linkedin.com/in/tony-walteur](https://www.linkedin.com/in/tony-walteur-7067b81a2/)**
 > If you build one of these, I genuinely want to see it — tag me.
 
+
+<img width="3598" height="2218" alt="image" src="https://github.com/user-attachments/assets/4c5e51b7-037a-4e1b-b90c-996340f7079c" />
+
+
 ---
 
 ## What you get
