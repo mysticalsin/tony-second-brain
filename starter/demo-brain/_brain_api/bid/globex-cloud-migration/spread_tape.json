@@ -1,0 +1,24 @@
+{
+ "bid_id": "globex-cloud-migration",
+ "trend": "compressing",
+ "meetings": [
+  {
+   "ref": "demo-meeting-1",
+   "date": "2026-06-01",
+   "spread": 0.8,
+   "one_line": "[DEMO] price pushback on licensing"
+  },
+  {
+   "ref": "demo-meeting-2",
+   "date": "2026-06-05",
+   "spread": 0.5,
+   "one_line": "[DEMO] scope agreed, timeline open"
+  },
+  {
+   "ref": "demo-meeting-3",
+   "date": "2026-06-09",
+   "spread": 0.2,
+   "one_line": "[DEMO] verbal go pending legal"
+  }
+ ]
+}

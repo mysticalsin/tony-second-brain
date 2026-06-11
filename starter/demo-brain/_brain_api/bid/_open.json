@@ -1,0 +1,22 @@
+{
+ "bids": [
+  {
+   "bid_id": "globex-cloud-migration",
+   "client": "Globex",
+   "stage": "Propose",
+   "value": 450000,
+   "deadline": "2026-07-15",
+   "probability": 0.55,
+   "owner": "you"
+  },
+  {
+   "bid_id": "initech-ai-pilot",
+   "client": "Initech",
+   "stage": "Qualify",
+   "value": 120000,
+   "deadline": "2026-08-01",
+   "probability": 0.3,
+   "owner": "you"
+  }
+ ]
+}

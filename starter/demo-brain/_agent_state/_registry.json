@@ -1,0 +1,60 @@
+{
+ "agents": [
+  {
+   "agent_name": "scout",
+   "status": "active",
+   "schedule": "daily",
+   "expected_cadence_hours": 26,
+   "role": "[DEMO] scout"
+  },
+  {
+   "agent_name": "drafter",
+   "status": "active",
+   "schedule": "daily",
+   "expected_cadence_hours": 26,
+   "role": "[DEMO] drafter"
+  },
+  {
+   "agent_name": "researcher",
+   "status": "active",
+   "schedule": "daily",
+   "expected_cadence_hours": 26,
+   "role": "[DEMO] researcher"
+  },
+  {
+   "agent_name": "qualifier",
+   "status": "active",
+   "schedule": "daily",
+   "expected_cadence_hours": 26,
+   "role": "[DEMO] qualifier"
+  },
+  {
+   "agent_name": "curator",
+   "status": "active",
+   "schedule": "daily",
+   "expected_cadence_hours": 26,
+   "role": "[DEMO] curator"
+  },
+  {
+   "agent_name": "watchdog",
+   "status": "active",
+   "schedule": "daily",
+   "expected_cadence_hours": 26,
+   "role": "[DEMO] watchdog"
+  },
+  {
+   "agent_name": "scribe",
+   "status": "active",
+   "schedule": "daily",
+   "expected_cadence_hours": 26,
+   "role": "[DEMO] scribe"
+  },
+  {
+   "agent_name": "analyst",
+   "status": "active",
+   "schedule": "daily",
+   "expected_cadence_hours": 26,
+   "role": "[DEMO] analyst"
+  }
+ ]
+}

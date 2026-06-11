@@ -1,0 +1,9 @@
+{
+  "accentColor": "#6600AE",
+  "theme": "obsidian",
+  "baseFontSize": 16,
+  "enabledCssSnippets": [
+    "color-codification",
+    "command-center"
+  ]
+}

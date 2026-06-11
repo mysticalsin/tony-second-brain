@@ -31,7 +31,9 @@ Everything binds to **real data in your vault**. The #1 design law: *no theater*
 
 ## How it works (the plug-and-play part)
 
-Two layers: the **turnkey core** (`starter/` vault skeleton + `plugin/` — the real, sanitized plugin, installed verbatim so YOUR dashboard and Ultron look exactly like mine) and the **agent-built personalization** (everything else, driven by the specs). You hand this repo to your coding agent:
+**Start with [SETUP.md](SETUP.md)** — 10 deterministic minutes that give every machine the IDENTICAL base: same skeleton, same plugin (the real one, sanitized), same dark-purple look, same visible Ultron orb, same dashboard — verified by a 6-point gate before anything gets personalized. Demo data included so it's alive on first open.
+
+Then, for personalization, you hand this repo to your coding agent:
 
 ```bash
 git clone https://github.com/mysticalsin/tony-second-brain
@@ -67,9 +69,11 @@ The architecture decisions, the perf rules, and especially the failure modes in 
 ## Repository map
 
 ```
-START-HERE-AGENT.md        ← give this to your agent (the master build prompt)
-starter/vault-skeleton/    ← the exact folder structure — copied verbatim in Phase 1
-plugin/claude-command-center/ ← the REAL plugin (sanitized) — installed verbatim in Phase 2
+SETUP.md                   ← DO THIS FIRST — deterministic base install + VERIFY gate
+START-HERE-AGENT.md        ← then give this to your agent (personalization + advanced builds)
+starter/vault-skeleton/    ← exact folder structure + .obsidian look (theme, snippets)
+starter/demo-brain/        ← labeled synthetic data — dashboard alive on first open
+plugin/claude-command-center/ ← the REAL plugin (sanitized, orb visible by default)
 interview/INTERVIEW.md     ← the personalization questionnaire your agent runs
 specs/
   00-architecture.md       ← vault layers, design laws, machine-readable surfaces

@@ -1,0 +1,850 @@
+/* ============================================================
+   COLOR CODIFICATION — v5 (NEON, 2026-05-21)
+
+   Goals over v4:
+   - Saturation ↑↑ (every fill goes from 25% → 50-65%)
+   - Border thickness ↑ (5px → 6-8px)
+   - Glow box-shadows on hover
+   - PULSE animation on Important
+   - Letter-spacing for that "screen-printed" pop
+   - NEW: Transcripts (Cluely + Teams auto-ingested) get DEEP CRIMSON
+   - NEW: Cluely vs Teams sub-distinguished by tint
+   - NEW: Hot RFP / open bid auto-highlights
+
+   COMPLETE COLOR MAP:
+
+   AUTO-INGESTED CONTENT (NEW v5 — deep, alarming colors)
+     🎙️ CLUELY TRANSCRIPTS    → DEEP CRIMSON     #B91C1C
+     🎤 TEAMS TRANSCRIPTS     → DARK CRIMSON     #991B1B
+     📝 MANUAL MEETING NOTES  → ELECTRIC CYAN    #00E5FF
+     🗒️ MEETING PREP          → SKY              #38BDF8
+     ✅ MEETING RECAPS        → ROYAL BLUE       #3B82F6
+
+   PRIMARY USE CASES (saturation +30%)
+     🛠️ SKILLS               → BRIGHT GOLD      #F59E0B
+     🤖 CLAUDE CODE          → NEON GREEN       #00E676
+     🟠 DUST MODIFIED        → ELECTRIC ORANGE  #FF6B00
+     🔴 IMPORTANT (PULSING)  → BLOOD RED        #DC2626
+     💼 CLIENTS              → NEON EMERALD     #00C853
+     📣 BIDS / RFPs          → ELECTRIC AMBER   #FFB300
+     🤝 PEOPLE               → HOT PINK         #FF2D7B
+     📚 READING              → DEEP COPPER      #7C2D12
+     🟣 BRAIN / MEMORY       → brand PURPLE     #6600AE (bright)
+     ✉️ OUTBOUND DRAFTS      → ELECTRIC YELLOW  #FFEA00
+     💰 ROI / MONEY          → NEON GREEN-DARK  #00C853 (bold)
+     ⚪ ARCHIVES             → MUTED GREY       #475569
+
+   SECONDARY
+     ☀️ DAILY NOTES          → ELECTRIC SKY     #00B8FF
+     🗓️ WEEKLY REVIEWS       → ELECTRIC INDIGO  #4F46E5
+     📊 DASHBOARD            → ELECTRIC PURPLE  #5B21B6
+     🎯 GOALS / OKRs         → HOT MAGENTA      #E91E63
+     📐 TEMPLATES            → MUTED SLATE      #64748B (faded)
+     🎨 CANVAS FILES         → ELECTRIC TEAL    #00BFA5
+     🗃️ BASE FILES           → ELECTRIC VIOLET  #7B1FA2
+     ⚖️ DECISION LOGS        → BURGUNDY         #BE123C
+     🏆 WIN/LOSS / RETRO     → NEON JADE        #00BFA5
+     🎤 PRESENTATIONS        → ELECTRIC FUCHSIA #D500F9
+     🔬 INTEL / RESEARCH     → ELECTRIC BLUE    #2962FF
+     💡 USE CASES            → ELECTRIC BLUE    #1976D2
+     🌐 EXTERNAL             → GREY             #94A3B8
+     ⚙️ META / PREFS         → DARK SLATE       #334155
+   ============================================================ */
+
+
+/* ============================================================
+   PULSE ANIMATION for Important + urgent
+   ============================================================ */
+
+@keyframes tc-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+  50%      { box-shadow: 0 0 12px 4px rgba(220, 38, 38, 0.5); }
+}
+
+@keyframes tc-glow {
+  0%, 100% { filter: brightness(1.0); }
+  50%      { filter: brightness(1.15); }
+}
+
+
+/* ============================================================
+   GLOBAL — bigger nav, bolder type
+   ============================================================ */
+
+body .workspace-leaf[data-type="file-explorer"] .nav-folder-title,
+body .workspace-leaf[data-type="file-explorer"] .nav-file-title {
+  font-size: 14px !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  margin: 3px 4px !important;
+  border-radius: 8px !important;
+  letter-spacing: 0.2px !important;
+}
+
+
+/* ============================================================
+   🎙️ TRANSCRIPTS — DEEP CRIMSON (where they actually live: 00_Inbox/from-meetings/)
+   ============================================================ */
+
+/* 🎙️ CLUELY transcripts — BLACK-CRIMSON (very dark, almost-black) */
+body .nav-file-title[data-path*="cluely" i],
+body .nav-file-title[data-path*="Cluely"],
+body .nav-folder-title[data-path*="cluely" i],
+body .nav-folder-title[data-path*="Cluely"] {
+  --uc: #450A0A; --uc-bg: rgba(69, 10, 10, 0.65); --uc-bg-hover: rgba(69, 10, 10, 0.85); --uc-emoji: '🎙️';
+}
+
+/* 🎤 TEAMS transcripts — MICROSOFT TEAMS PURPLE (brand-matched, distinct from red) */
+body .nav-file-title[data-path*="00_Inbox/from-meetings/"][data-path*="teams" i],
+body .nav-file-title[data-path*="00_Inbox/from-meetings/"][data-path*="Teams"],
+body .nav-folder-title[data-path*="from-meetings/teams" i],
+body .nav-folder-title[data-path*="from-meetings/Teams"] {
+  --uc: #6264A7; --uc-bg: rgba(98, 100, 167, 0.55); --uc-bg-hover: rgba(98, 100, 167, 0.75); --uc-emoji: '🎤';
+}
+
+/* GENERIC INCOMING TRANSCRIPTS — DEEP RED (00_Inbox/from-meetings/) */
+body .nav-folder-title[data-path="00_Inbox/from-meetings"],
+body .nav-folder-title[data-path^="00_Inbox/from-meetings/"],
+body .nav-file-title[data-path^="00_Inbox/from-meetings/"] {
+  --uc: #B91C1C; --uc-bg: rgba(185, 28, 28, 0.50); --uc-bg-hover: rgba(185, 28, 28, 0.70); --uc-emoji: '🎙️';
+}
+
+/* Files containing "transcript" anywhere — DEEP CRIMSON */
+body .nav-file-title[data-path*="transcript" i] {
+  --uc: #B91C1C; --uc-bg: rgba(185, 28, 28, 0.45); --uc-bg-hover: rgba(185, 28, 28, 0.65); --uc-emoji: '🎙️';
+}
+
+/* CLAUDE SESSION TRANSCRIPTS — NEON GREEN (not red — Claude's distinct) */
+body .nav-folder-title[data-path="_External/claude-transcripts"],
+body .nav-folder-title[data-path^="_External/claude-transcripts/"],
+body .nav-file-title[data-path^="_External/claude-transcripts/"] {
+  --uc: #00E676; --uc-bg: rgba(0, 230, 118, 0.50); --uc-bg-hover: rgba(0, 230, 118, 0.70); --uc-emoji: '🤖';
+}
+
+/* MEETINGS/ folder + subdirs (if/when they exist later) */
+body .nav-folder-title[data-path="Meetings"] {
+  --uc: #00E5FF; --uc-bg: rgba(0, 229, 255, 0.40); --uc-bg-hover: rgba(0, 229, 255, 0.60); --uc-emoji: '📝';
+}
+body .nav-folder-title[data-path="Meetings/transcripts"],
+body .nav-folder-title[data-path^="Meetings/transcripts/"],
+body .nav-file-title[data-path^="Meetings/transcripts/"] {
+  --uc: #B91C1C; --uc-bg: rgba(185, 28, 28, 0.50); --uc-bg-hover: rgba(185, 28, 28, 0.70); --uc-emoji: '🎙️';
+}
+body .nav-folder-title[data-path="Meetings/prep"],
+body .nav-folder-title[data-path^="Meetings/prep/"],
+body .nav-file-title[data-path^="Meetings/prep/"] {
+  --uc: #38BDF8; --uc-bg: rgba(56, 189, 248, 0.40); --uc-bg-hover: rgba(56, 189, 248, 0.60); --uc-emoji: '🗒️';
+}
+body .nav-folder-title[data-path="Meetings/recaps"],
+body .nav-folder-title[data-path^="Meetings/recaps/"],
+body .nav-file-title[data-path^="Meetings/recaps/"] {
+  --uc: #3B82F6; --uc-bg: rgba(59, 130, 246, 0.40); --uc-bg-hover: rgba(59, 130, 246, 0.60); --uc-emoji: '✅';
+}
+
+/* MEETING INTEL agent writes (Dust) — DEEP RED + ORANGE BORDER */
+body .nav-folder-title[data-path="00_Inbox/from-dust/meeting-intel"],
+body .nav-folder-title[data-path^="00_Inbox/from-dust/meeting-intel/"],
+body .nav-file-title[data-path^="00_Inbox/from-dust/meeting-intel/"] {
+  --uc: #B91C1C; --uc-bg: rgba(185, 28, 28, 0.45); --uc-bg-hover: rgba(185, 28, 28, 0.65); --uc-emoji: '🎙️';
+}
+
+/* 📻 MANUAL transcripts subfolder — RUST RED (distinct from cluely/teams) */
+body .nav-folder-title[data-path="00_Inbox/from-meetings/manual"],
+body .nav-folder-title[data-path^="00_Inbox/from-meetings/manual/"],
+body .nav-file-title[data-path^="00_Inbox/from-meetings/manual/"] {
+  --uc: #C2410C; --uc-bg: rgba(194, 65, 12, 0.50); --uc-bg-hover: rgba(194, 65, 12, 0.70); --uc-emoji: '📻';
+}
+
+/* ✅ PROCESSED transcripts (already triaged) — MUTED + FADED */
+body .nav-folder-title[data-path="00_Inbox/from-meetings/processed"],
+body .nav-folder-title[data-path^="00_Inbox/from-meetings/processed/"],
+body .nav-file-title[data-path^="00_Inbox/from-meetings/processed/"] {
+  --uc: #78716C; --uc-bg: rgba(120, 113, 108, 0.30); --uc-bg-hover: rgba(120, 113, 108, 0.50); --uc-emoji: '✅';
+  opacity: 0.75;
+}
+
+/* 📥 DROPBOX folders (action needed — drop your exports here) — BRIGHT AMBER */
+body .nav-folder-title[data-path$="/_dropbox"],
+body .nav-folder-title[data-path*="/_dropbox/"],
+body .nav-file-title[data-path*="/_dropbox/"] {
+  --uc: #F59E0B; --uc-bg: rgba(245, 158, 11, 0.55); --uc-bg-hover: rgba(245, 158, 11, 0.75); --uc-emoji: '📥';
+  animation: tc-glow 3s ease-in-out infinite;
+}
+
+
+/* ============================================================
+   PRIMARY USE CASES (vivid)
+   ============================================================ */
+
+/* 🛠️ SKILLS — BRIGHT GOLD */
+body .nav-folder-title[data-path="_Skills"],
+body .nav-folder-title[data-path^="_Skills/"],
+body .nav-file-title[data-path^="_Skills/"] {
+  --uc: #F59E0B; --uc-bg: rgba(245, 158, 11, 0.45); --uc-bg-hover: rgba(245, 158, 11, 0.65); --uc-emoji: '🛠️';
+}
+
+/* 🤖 CLAUDE CODE — NEON GREEN */
+body .nav-folder-title[data-path="_agent_state"],
+body .nav-folder-title[data-path^="_agent_state/claude-code"],
+body .nav-file-title[data-path^="_agent_state/claude-code/"] {
+  --uc: #00E676; --uc-bg: rgba(0, 230, 118, 0.40); --uc-bg-hover: rgba(0, 230, 118, 0.60); --uc-emoji: '🤖';
+}
+
+/* 🟠 DUST MODIFIED — ELECTRIC ORANGE */
+body .nav-folder-title[data-path="00_Inbox"],
+body .nav-folder-title[data-path^="00_Inbox/from-dust"],
+body .nav-folder-title[data-path^="00_Inbox/from-dust/"],
+body .nav-file-title[data-path^="00_Inbox/from-dust/"] {
+  --uc: #FF6B00; --uc-bg: rgba(255, 107, 0, 0.45); --uc-bg-hover: rgba(255, 107, 0, 0.65); --uc-emoji: '🟠';
+}
+
+/* 🔴 IMPORTANT — BLOOD RED + PULSE */
+body .nav-folder-title[data-path="Important"],
+body .nav-folder-title[data-path^="Important/"],
+body .nav-file-title[data-path^="Important/"] {
+  --uc: #DC2626; --uc-bg: rgba(220, 38, 38, 0.50); --uc-bg-hover: rgba(220, 38, 38, 0.75); --uc-emoji: '🔴';
+  animation: tc-pulse 2.5s ease-in-out infinite;
+}
+
+/* 💼 CLIENTS — NEON EMERALD */
+body .nav-folder-title[data-path="Clients"],
+body .nav-folder-title[data-path^="Clients/"],
+body .nav-file-title[data-path^="Clients/"],
+body .nav-folder-title[data-path="02_Areas/Accounts"],
+body .nav-folder-title[data-path^="02_Areas/Accounts/"],
+body .nav-file-title[data-path^="02_Areas/Accounts/"] {
+  --uc: #00C853; --uc-bg: rgba(0, 200, 83, 0.42); --uc-bg-hover: rgba(0, 200, 83, 0.62); --uc-emoji: '💼';
+}
+
+/* 📣 BIDS / RFPs — ELECTRIC AMBER */
+body .nav-folder-title[data-path="RFPs"],
+body .nav-folder-title[data-path^="RFPs/"],
+body .nav-file-title[data-path^="RFPs/"],
+body .nav-folder-title[data-path="RFPs"],
+body .nav-folder-title[data-path^="RFPs/"],
+body .nav-file-title[data-path^="RFPs/"] {
+  --uc: #FFB300; --uc-bg: rgba(255, 179, 0, 0.45); --uc-bg-hover: rgba(255, 179, 0, 0.65); --uc-emoji: '📣';
+}
+
+/* 🤝 PEOPLE — HOT PINK */
+body .nav-folder-title[data-path="People"],
+body .nav-folder-title[data-path^="People/"],
+body .nav-file-title[data-path^="People/"] {
+  --uc: #FF2D7B; --uc-bg: rgba(255, 45, 123, 0.42); --uc-bg-hover: rgba(255, 45, 123, 0.62); --uc-emoji: '🤝';
+}
+
+/* 📚 READING — DEEP COPPER */
+body .nav-folder-title[data-path="Reading"],
+body .nav-folder-title[data-path^="Reading/"],
+body .nav-file-title[data-path^="Reading/"] {
+  --uc: #7C2D12; --uc-bg: rgba(124, 45, 18, 0.42); --uc-bg-hover: rgba(124, 45, 18, 0.62); --uc-emoji: '📚';
+}
+
+/* 🟣 BRAIN / MEMORY — brand PURPLE */
+body .nav-folder-title[data-path="_brain_api"],
+body .nav-folder-title[data-path^="_brain_api/"],
+body .nav-file-title[data-path^="_brain_api/"],
+body .nav-folder-title[data-path="_brain_index"],
+body .nav-folder-title[data-path^="_brain_index/"],
+body .nav-file-title[data-path^="_brain_index/"],
+body .nav-folder-title[data-path="_wiki"],
+body .nav-folder-title[data-path^="_wiki/"],
+body .nav-file-title[data-path^="_wiki/"],
+body .nav-folder-title[data-path="FleetBrain"],
+body .nav-folder-title[data-path^="FleetBrain/"],
+body .nav-file-title[data-path^="FleetBrain/"] {
+  --uc: #7F00DA; --uc-bg: rgba(127, 0, 218, 0.42); --uc-bg-hover: rgba(127, 0, 218, 0.62); --uc-emoji: '🟣';
+}
+
+/* ✉️ OUTBOUND DRAFTS — ELECTRIC YELLOW */
+body .nav-folder-title[data-path="Outbound"],
+body .nav-folder-title[data-path^="Outbound/"],
+body .nav-file-title[data-path^="Outbound/"] {
+  --uc: #FFEA00; --uc-bg: rgba(255, 234, 0, 0.50); --uc-bg-hover: rgba(255, 234, 0, 0.70); --uc-emoji: '✉️';
+}
+
+/* 💰 ROI — NEON GREEN */
+body .nav-folder-title[data-path="ROI"],
+body .nav-folder-title[data-path^="ROI/"],
+body .nav-file-title[data-path^="ROI/"] {
+  --uc: #00C853; --uc-bg: rgba(0, 200, 83, 0.45); --uc-bg-hover: rgba(0, 200, 83, 0.65); --uc-emoji: '💰';
+}
+
+/* ⚪ ARCHIVES — MUTED SLATE */
+body .nav-folder-title[data-path="04_Archives"],
+body .nav-folder-title[data-path^="04_Archives/"],
+body .nav-file-title[data-path^="04_Archives/"] {
+  --uc: #475569; --uc-bg: rgba(71, 85, 105, 0.25); --uc-bg-hover: rgba(71, 85, 105, 0.45); --uc-emoji: '⚪';
+}
+
+
+/* ============================================================
+   SECONDARY USE CASES
+   ============================================================ */
+
+/* ☀️ DAILY NOTES — ELECTRIC SKY */
+body .nav-folder-title[data-path="02_Areas/Daily"],
+body .nav-folder-title[data-path^="02_Areas/Daily/"],
+body .nav-file-title[data-path^="02_Areas/Daily/"] {
+  --uc: #00B8FF; --uc-bg: rgba(0, 184, 255, 0.42); --uc-bg-hover: rgba(0, 184, 255, 0.62); --uc-emoji: '☀️';
+}
+
+/* 🗓️ WEEKLY REVIEWS — ELECTRIC INDIGO */
+body .nav-folder-title[data-path="02_Areas/Weekly Reviews"],
+body .nav-folder-title[data-path^="02_Areas/Weekly Reviews/"],
+body .nav-file-title[data-path^="02_Areas/Weekly Reviews/"] {
+  --uc: #4F46E5; --uc-bg: rgba(79, 70, 229, 0.42); --uc-bg-hover: rgba(79, 70, 229, 0.62); --uc-emoji: '🗓️';
+}
+
+/* 📊 DASHBOARD / PIPELINE — ELECTRIC PURPLE */
+body .nav-file-title[data-path="02_Areas/Dashboard.md"],
+body .nav-file-title[data-path="02_Areas/Daily_Brief.md"],
+body .nav-file-title[data-path="02_Areas/Pipeline.md"],
+body .nav-file-title[data-path="02_Areas/Pipeline_v2.md"] {
+  --uc: #5B21B6; --uc-bg: rgba(91, 33, 182, 0.55); --uc-bg-hover: rgba(91, 33, 182, 0.75); --uc-emoji: '📊';
+  animation: tc-glow 3s ease-in-out infinite;
+}
+
+/* 🎯 GOALS / OKRs — HOT MAGENTA */
+body .nav-file-title[data-path*="goal"],
+body .nav-file-title[data-path*="OKR"],
+body .nav-file-title[data-path*="okr"],
+body .nav-folder-title[data-path*="Goals"] {
+  --uc: #E91E63; --uc-bg: rgba(233, 30, 99, 0.42); --uc-bg-hover: rgba(233, 30, 99, 0.62); --uc-emoji: '🎯';
+}
+
+/* 📐 TEMPLATES — MUTED SLATE (faded) */
+body .nav-file-title[data-path*="_template"],
+body .nav-folder-title[data-path*="_template"],
+body .nav-file-title[data-path*="/Templates/"],
+body .nav-folder-title[data-path="03_Resources/Templates"],
+body .nav-folder-title[data-path^="03_Resources/Templates/"] {
+  --uc: #64748B; --uc-bg: rgba(100, 116, 139, 0.25); --uc-bg-hover: rgba(100, 116, 139, 0.45); --uc-emoji: '📐';
+  opacity: 0.78;
+}
+
+/* 🎨 CANVAS FILES — ELECTRIC TEAL */
+body .nav-file-title[data-path$=".canvas"] {
+  --uc: #00BFA5; --uc-bg: rgba(0, 191, 165, 0.50); --uc-bg-hover: rgba(0, 191, 165, 0.70); --uc-emoji: '🎨';
+}
+
+/* 🗃️ BASE FILES — ELECTRIC VIOLET */
+body .nav-file-title[data-path$=".base"] {
+  --uc: #7B1FA2; --uc-bg: rgba(123, 31, 162, 0.50); --uc-bg-hover: rgba(123, 31, 162, 0.70); --uc-emoji: '🗃️';
+}
+
+/* ⚖️ DECISION LOGS — BURGUNDY */
+body .nav-file-title[data-path*="Decision"],
+body .nav-file-title[data-path*="decision"],
+body .nav-file-title[data-path*="03 - Decision"] {
+  --uc: #BE123C; --uc-bg: rgba(190, 18, 60, 0.45); --uc-bg-hover: rgba(190, 18, 60, 0.65); --uc-emoji: '⚖️';
+}
+
+/* 🏆 WIN/LOSS / RETRO — NEON JADE */
+body .nav-file-title[data-path*="win-loss"],
+body .nav-file-title[data-path*="WinLoss"],
+body .nav-file-title[data-path*="retro"],
+body .nav-file-title[data-path*="Retro"],
+body .nav-file-title[data-path*="postmortem"] {
+  --uc: #00BFA5; --uc-bg: rgba(0, 191, 165, 0.42); --uc-bg-hover: rgba(0, 191, 165, 0.62); --uc-emoji: '🏆';
+}
+
+/* 🎤 PRESENTATIONS — ELECTRIC FUCHSIA */
+body .nav-file-title[data-path$=".pptx"],
+body .nav-file-title[data-path$=".pdf"],
+body .nav-file-title[data-path*="slides"],
+body .nav-file-title[data-path*="Slides"],
+body .nav-file-title[data-path*="deck"],
+body .nav-file-title[data-path*="Deck"] {
+  --uc: #D500F9; --uc-bg: rgba(213, 0, 249, 0.40); --uc-bg-hover: rgba(213, 0, 249, 0.60); --uc-emoji: '🎤';
+}
+
+/* 🔬 INTEL / RESEARCH — ELECTRIC BLUE */
+body .nav-folder-title[data-path="10_Intelligence"],
+body .nav-folder-title[data-path^="10_Intelligence/"],
+body .nav-file-title[data-path^="10_Intelligence/"],
+body .nav-file-title[data-path*="/intel/"] {
+  --uc: #2962FF; --uc-bg: rgba(41, 98, 255, 0.45); --uc-bg-hover: rgba(41, 98, 255, 0.65); --uc-emoji: '🔬';
+}
+
+/* 💡 USE CASES — ELECTRIC BLUE */
+body .nav-folder-title[data-path="Use Cases"],
+body .nav-folder-title[data-path^="Use Cases/"],
+body .nav-file-title[data-path^="Use Cases/"] {
+  --uc: #1976D2; --uc-bg: rgba(25, 118, 210, 0.42); --uc-bg-hover: rgba(25, 118, 210, 0.62); --uc-emoji: '💡';
+}
+
+/* 🌐 EXTERNAL — GREY */
+body .nav-folder-title[data-path="_External"],
+body .nav-folder-title[data-path^="_External/"],
+body .nav-file-title[data-path^="_External/"] {
+  --uc: #94A3B8; --uc-bg: rgba(148, 163, 184, 0.25); --uc-bg-hover: rgba(148, 163, 184, 0.45); --uc-emoji: '🌐';
+}
+
+/* ⚙️ PREFERENCES + META — DARK SLATE */
+body .nav-folder-title[data-path="Preferences"],
+body .nav-folder-title[data-path^="Preferences/"],
+body .nav-file-title[data-path^="Preferences/"],
+body .nav-folder-title[data-path="99_Meta"],
+body .nav-folder-title[data-path^="99_Meta/"],
+body .nav-file-title[data-path^="99_Meta/"] {
+  --uc: #334155; --uc-bg: rgba(51, 65, 85, 0.30); --uc-bg-hover: rgba(51, 65, 85, 0.50); --uc-emoji: '⚙️';
+}
+
+/* PIPELINE BUILD — CHARCOAL */
+body .nav-folder-title[data-path="build"],
+body .nav-folder-title[data-path^="build/"],
+body .nav-file-title[data-path^="build/"] {
+  --uc: #1F2937; --uc-bg: rgba(31, 41, 55, 0.30); --uc-bg-hover: rgba(31, 41, 55, 0.50); --uc-emoji: '⚙️';
+}
+
+/* GENERATED / OUT — BLACK */
+body .nav-folder-title[data-path="out"],
+body .nav-folder-title[data-path^="out/"],
+body .nav-folder-title[data-path="graphify-out"],
+body .nav-folder-title[data-path^="graphify-out/"] {
+  --uc: #111827; --uc-bg: rgba(17, 24, 39, 0.25); --uc-bg-hover: rgba(17, 24, 39, 0.45); --uc-emoji: '🔧';
+}
+
+/* 🔵 AREAS catch-all (NOT Daily/Weekly/Accounts) */
+body .nav-folder-title[data-path="02_Areas"] {
+  --uc: #0EA5E9; --uc-bg: rgba(14, 165, 233, 0.30); --uc-bg-hover: rgba(14, 165, 233, 0.50); --uc-emoji: '🔵';
+}
+
+/* 📦 RESOURCES catch-all */
+body .nav-folder-title[data-path="03_Resources"] {
+  --uc: #8B5CF6; --uc-bg: rgba(139, 92, 246, 0.35); --uc-bg-hover: rgba(139, 92, 246, 0.55); --uc-emoji: '📦';
+}
+
+
+/* ============================================================
+   APPLY THE COLORS — VERY STRONG
+   ============================================================ */
+
+body .nav-folder-title[data-path],
+body .nav-file-title[data-path] {
+  border-left: 6px solid var(--uc, transparent) !important;
+  background-color: var(--uc-bg, transparent) !important;
+  padding-left: 10px !important;
+  transition: background-color 150ms ease, transform 100ms ease, box-shadow 200ms ease;
+}
+
+body .nav-folder-title[data-path]:hover,
+body .nav-file-title[data-path]:hover {
+  background-color: var(--uc-bg-hover, var(--background-modifier-hover)) !important;
+  transform: translateX(3px);
+  box-shadow: 0 0 16px var(--uc, transparent), inset 0 0 8px rgba(255, 255, 255, 0.1) !important;
+  border-left-width: 8px !important;
+}
+
+body .nav-folder-title[data-path] .nav-folder-title-content,
+body .nav-file-title[data-path] .nav-file-title-content {
+  color: var(--uc, var(--text-normal)) !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.3px;
+}
+
+body .nav-folder-title[data-path] .nav-folder-title-content::before {
+  content: var(--uc-emoji, '');
+  margin-right: 6px;
+  font-size: 1.1em;
+}
+
+body .nav-file-title[data-path].is-active {
+  background-color: var(--uc-bg-hover, var(--background-secondary)) !important;
+  box-shadow: 0 0 20px var(--uc, transparent), 0 0 4px var(--uc, transparent) !important;
+  border-left-width: 10px !important;
+  transform: translateX(4px);
+}
+
+body .nav-folder-title[data-path] .nav-folder-collapse-indicator svg,
+body .nav-folder-title[data-path] .collapse-icon svg {
+  color: var(--uc, var(--text-muted)) !important;
+}
+
+
+/* ============================================================
+   SOURCE-ORIGIN MARKERS on files (regardless of folder)
+   ============================================================ */
+
+body .nav-file-title[data-path*="/from-dust/"] .nav-file-title-content::after {
+  content: ' 🟠'; margin-left: 6px;
+}
+body .nav-file-title[data-path*="claude-code"] .nav-file-title-content::after {
+  content: ' 🤖'; margin-left: 6px;
+}
+body .nav-file-title[data-path*="cluely" i] .nav-file-title-content::after {
+  content: ' 🎙️'; margin-left: 6px;
+}
+body .nav-file-title[data-path*="from-meetings/"][data-path*="teams" i] .nav-file-title-content::after {
+  content: ' 🎤'; margin-left: 6px;
+}
+body .nav-file-title[data-path^="00_Inbox/from-meetings/"]:not([data-path*="cluely"]):not([data-path*="teams"]) .nav-file-title-content::after {
+  content: ' 🎙️'; margin-left: 6px;
+}
+body .nav-file-title[data-path*="transcript" i]:not([data-path*="cluely"]):not([data-path*="teams"]) .nav-file-title-content::after {
+  content: ' 🎙️'; margin-left: 6px;
+}
+body .nav-file-title[data-path^="Meetings/transcripts/"] .nav-file-title-content::after {
+  content: ' 🎙️'; margin-left: 6px;
+}
+body .nav-file-title[data-path^="_wiki/"] .nav-file-title-content::after {
+  content: ' 🧠'; margin-left: 6px;
+}
+
+
+/* ============================================================
+   TAG SEMANTICS — solid pills with neon glow
+   ============================================================ */
+
+body a.tag {
+  border-radius: 12px !important;
+  padding: 2px 10px !important;
+  font-weight: 700 !important;
+  font-size: 0.85em !important;
+  letter-spacing: 0.3px;
+}
+
+body a.tag[href="#dust"], body a.tag[href^="#dust/"] {
+  background-color: #FF6B00 !important; color: white !important;
+  box-shadow: 0 0 8px rgba(255, 107, 0, 0.5) !important;
+}
+body a.tag[href="#claude"], body a.tag[href="#claude-code"], body a.tag[href^="#claude-code/"] {
+  background-color: #00E676 !important; color: white !important;
+  box-shadow: 0 0 8px rgba(0, 230, 118, 0.5) !important;
+}
+body a.tag[href="#meeting"], body a.tag[href^="#meeting/"] {
+  background-color: #00E5FF !important; color: #000 !important;
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.5) !important;
+}
+body a.tag[href="#transcript"], body a.tag[href^="#transcript/"], body a.tag[href="#cluely"], body a.tag[href="#teams"] {
+  background-color: #B91C1C !important; color: white !important;
+  box-shadow: 0 0 10px rgba(185, 28, 28, 0.7) !important;
+}
+body a.tag[href="#urgent"], body a.tag[href="#important"], body a.tag[href="#p0"], body a.tag[href="#p1"] {
+  background-color: #DC2626 !important; color: white !important;
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.8) !important;
+  font-size: 0.9em !important;
+  animation: tc-pulse 2s ease-in-out infinite;
+}
+body a.tag[href^="#client/"] {
+  background-color: #00C853 !important; color: white !important;
+  box-shadow: 0 0 8px rgba(0, 200, 83, 0.5) !important;
+}
+body a.tag[href^="#bid/"], body a.tag[href^="#rfp/"] {
+  background-color: #FFB300 !important; color: #1F2937 !important;
+  box-shadow: 0 0 8px rgba(255, 179, 0, 0.5) !important;
+}
+body a.tag[href="#skill"], body a.tag[href^="#skill/"] {
+  background-color: #F59E0B !important; color: white !important;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5) !important;
+}
+body a.tag[href^="#person/"], body a.tag[href^="#people/"] {
+  background-color: #FF2D7B !important; color: white !important;
+  box-shadow: 0 0 8px rgba(255, 45, 123, 0.5) !important;
+}
+body a.tag[href="#daily"], body a.tag[href^="#daily/"] {
+  background-color: #00B8FF !important; color: white !important;
+  box-shadow: 0 0 8px rgba(0, 184, 255, 0.5) !important;
+}
+body a.tag[href="#weekly"] {
+  background-color: #4F46E5 !important; color: white !important;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.5) !important;
+}
+body a.tag[href="#goal"], body a.tag[href^="#okr"] {
+  background-color: #E91E63 !important; color: white !important;
+  box-shadow: 0 0 8px rgba(233, 30, 99, 0.5) !important;
+}
+body a.tag[href="#decision"] {
+  background-color: #BE123C !important; color: white !important;
+  box-shadow: 0 0 8px rgba(190, 18, 60, 0.5) !important;
+}
+body a.tag[href="#retro"], body a.tag[href="#win-loss"] {
+  background-color: #00BFA5 !important; color: white !important;
+  box-shadow: 0 0 8px rgba(0, 191, 165, 0.5) !important;
+}
+body a.tag[href="#template"], body a.tag[href="#archived"] {
+  background-color: #64748B !important; color: white !important; opacity: 0.7;
+}
+
+
+/* ============================================================
+   COMPACT LEGEND at bottom of file explorer (always visible)
+   ============================================================ */
+
+body .workspace-leaf[data-type="file-explorer"] .nav-files-container::after {
+  content:
+    '🎙️ Cluely    🎤 Teams       🎙️ Transcripts\A'
+    '🛠️ Skills    🤖 Claude      🟠 Dust\A'
+    '🔴 Urgent    💼 Clients     📣 Bids\A'
+    '🤝 People    📚 Reading     🟣 Brain\A'
+    '✉️ Outbound  💰 ROI         ☀️ Daily\A'
+    '🗓️ Weekly    📊 Dashboard   🎯 Goals\A'
+    '📐 Tmpl      🎨 Canvas      🗃️ Base\A'
+    '⚖️ Decision  🏆 Retro       🎤 Decks\A'
+    '🔬 Intel     💡 UseCase     ⚪ Archive';
+  white-space: pre;
+  display: block;
+  padding: 10px 12px;
+  margin: 10px 4px 6px 4px;
+  background: linear-gradient(180deg, rgba(127, 0, 218, 0.15) 0%, rgba(0, 0, 0, 0.5) 100%);
+  border: 2px solid #7F00DA;
+  border-radius: 8px;
+  font-size: 10.5px;
+  font-family: var(--font-interface);
+  font-weight: 700;
+  line-height: 1.6;
+  color: var(--text-normal);
+  letter-spacing: 0.3px;
+  box-shadow: 0 0 12px rgba(127, 0, 218, 0.3);
+}
+
+
+/* ============================================================
+   _COLOR_INDEX.md highlighted — sorts to top, rainbow background
+   ============================================================ */
+
+body .nav-file-title[data-path="_COLOR_INDEX.md"] {
+  background: linear-gradient(90deg,
+    rgba(127, 0, 218, 0.50) 0%,
+    rgba(0, 229, 255, 0.50) 20%,
+    rgba(245, 158, 11, 0.50) 40%,
+    rgba(0, 230, 118, 0.50) 60%,
+    rgba(255, 107, 0, 0.50) 80%,
+    rgba(220, 38, 38, 0.50) 100%) !important;
+  border-left: 8px solid #7F00DA !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 16px rgba(127, 0, 218, 0.5) !important;
+}
+body .nav-file-title[data-path="_COLOR_INDEX.md"] .nav-file-title-content {
+  color: white !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+}
+body .nav-file-title[data-path="_COLOR_INDEX.md"] .nav-file-title-content::before {
+  content: '🎨 ';
+  font-size: 1.2em;
+}
+
+
+/* ============================================================
+   ▓▓▓ CONTENT INK (v6) — colour the NOTE BODY, not just the sidebar ▓▓▓
+   Targets BOTH Live Preview (.cm6 / .HyperMD) AND Reading view
+   (.markdown-preview-view / .markdown-rendered). Body text stays
+   legible; structure + emphasis get the neon brand treatment.
+   ============================================================ */
+
+/* ---- HEADING HIERARCHY — rainbow ladder (H1 purple → H6 slate) ---- */
+
+.markdown-source-view.mod-cm6 .cm-header-1,
+.markdown-preview-view h1, .markdown-rendered h1 {
+  color: #7F00DA !important; font-weight: 900 !important;
+  letter-spacing: 0.3px;
+  text-shadow: 0 0 10px rgba(127, 0, 218, 0.45);
+}
+.markdown-preview-view h1, .markdown-rendered h1 {
+  border-bottom: 3px solid transparent !important;
+  border-image: linear-gradient(90deg, #7F00DA, #FF6B00, #FFB300) 1 !important;
+  padding-bottom: 4px !important;
+}
+.markdown-source-view.mod-cm6 .cm-header-2,
+.markdown-preview-view h2, .markdown-rendered h2 {
+  color: #FFB300 !important; font-weight: 800 !important;
+  text-shadow: 0 0 8px rgba(255, 179, 0, 0.4);
+}
+.markdown-source-view.mod-cm6 .cm-header-3,
+.markdown-preview-view h3, .markdown-rendered h3 {
+  color: #00E676 !important; font-weight: 800 !important;
+  text-shadow: 0 0 8px rgba(0, 230, 118, 0.4);
+}
+.markdown-source-view.mod-cm6 .cm-header-4,
+.markdown-preview-view h4, .markdown-rendered h4 {
+  color: #00B8FF !important; font-weight: 700 !important;
+}
+.markdown-source-view.mod-cm6 .cm-header-5,
+.markdown-preview-view h5, .markdown-rendered h5 {
+  color: #FF2D7B !important; font-weight: 700 !important;
+}
+.markdown-source-view.mod-cm6 .cm-header-6,
+.markdown-preview-view h6, .markdown-rendered h6 {
+  color: #94A3B8 !important; font-weight: 700 !important;
+  letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.85em;
+}
+
+/* ---- EMPHASIS — bold gold, italic cyan ---- */
+
+.markdown-source-view.mod-cm6 .cm-strong,
+.markdown-preview-view strong, .markdown-rendered strong {
+  color: #F59E0B !important; font-weight: 900 !important;
+}
+.markdown-source-view.mod-cm6 .cm-em,
+.markdown-preview-view em, .markdown-rendered em {
+  color: #00E5FF !important;
+}
+
+/* ---- HIGHLIGHTS — neon yellow marker, black text ---- */
+
+.markdown-source-view.mod-cm6 .cm-highlight,
+.markdown-preview-view mark, .markdown-rendered mark {
+  background: linear-gradient(180deg, #FFEA00 0%, #FFD600 100%) !important;
+  color: #1A0033 !important; font-weight: 700 !important;
+  padding: 1px 4px !important; border-radius: 4px !important;
+  box-shadow: 0 0 6px rgba(255, 234, 0, 0.5);
+}
+
+/* ---- BLOCKQUOTES — purple bar + tinted panel ---- */
+
+.markdown-preview-view blockquote, .markdown-rendered blockquote,
+.markdown-source-view.mod-cm6 .HyperMD-quote {
+  border-left: 5px solid #7F00DA !important;
+  background: rgba(127, 0, 218, 0.10) !important;
+  padding: 6px 14px !important; border-radius: 0 8px 8px 0 !important;
+  color: #C4B5FD !important; font-style: italic;
+}
+
+/* ---- INLINE CODE — violet pill ---- */
+
+.markdown-source-view.mod-cm6 .cm-inline-code,
+.markdown-preview-view code, .markdown-rendered code {
+  background: rgba(123, 31, 162, 0.30) !important;
+  color: #E879F9 !important;
+  border: 1px solid rgba(213, 0, 249, 0.35) !important;
+  border-radius: 5px !important; padding: 1px 6px !important;
+  font-weight: 600 !important;
+}
+/* fenced code block — keep readable, just an accent frame */
+.markdown-preview-view pre, .markdown-rendered pre,
+.markdown-source-view.mod-cm6 .HyperMD-codeblock {
+  border-left: 4px solid #00BFA5 !important;
+}
+.markdown-preview-view pre code, .markdown-rendered pre code {
+  background: transparent !important; border: none !important;
+  color: var(--text-normal) !important;
+}
+
+/* ---- LINKS — internal purple, external electric blue ---- */
+
+.markdown-preview-view a.internal-link, .markdown-rendered a.internal-link,
+.markdown-source-view.mod-cm6 .cm-hmd-internal-link {
+  color: #C77DFF !important; font-weight: 700 !important;
+  text-decoration-color: rgba(199, 125, 255, 0.5) !important;
+}
+.markdown-preview-view a.external-link, .markdown-rendered a.external-link,
+.markdown-source-view.mod-cm6 .cm-url, .markdown-source-view.mod-cm6 .cm-link {
+  color: #2962FF !important; font-weight: 600 !important;
+}
+
+/* ---- LIST MARKERS + TASK CHECKBOXES — amber bullets ---- */
+
+.markdown-preview-view ul > li::marker, .markdown-rendered ul > li::marker {
+  color: #FFB300 !important;
+}
+.markdown-preview-view ol > li::marker, .markdown-rendered ol > li::marker {
+  color: #00E676 !important; font-weight: 800 !important;
+}
+.markdown-preview-view input[type="checkbox"]:checked,
+.markdown-rendered input[type="checkbox"]:checked {
+  accent-color: #00E676 !important;
+}
+
+/* ---- HORIZONTAL RULE — gradient divider ---- */
+
+.markdown-preview-view hr, .markdown-rendered hr {
+  border: none !important; height: 3px !important;
+  background: linear-gradient(90deg, #7F00DA, #FF6B00, #FFB300, #00E676) !important;
+  border-radius: 2px !important; opacity: 0.8;
+}
+
+/* ---- TABLES — purple header, zebra rows ---- */
+
+.markdown-preview-view th, .markdown-rendered th {
+  background: rgba(127, 0, 218, 0.30) !important;
+  color: #F8F060 !important; font-weight: 800 !important;
+  border-bottom: 2px solid #7F00DA !important;
+}
+.markdown-preview-view tr:nth-child(even) td,
+.markdown-rendered tr:nth-child(even) td {
+  background: rgba(127, 0, 218, 0.06) !important;
+}
+
+/* ---- CALLOUTS — supercharge the native ones with brand glow ---- */
+
+.markdown-preview-view .callout, .markdown-rendered .callout {
+  border-radius: 10px !important;
+  box-shadow: 0 0 14px rgba(0, 0, 0, 0.3),
+              inset 0 0 0 1px var(--callout-color, rgba(255,255,255,0.08)) !important;
+}
+/* a few brand-mapped callout types */
+.callout[data-callout="important"], .callout[data-callout="warning"] {
+  --callout-color: 220, 38, 38 !important;
+}
+.callout[data-callout="tip"], .callout[data-callout="success"] {
+  --callout-color: 0, 230, 118 !important;
+}
+.callout[data-callout="info"], .callout[data-callout="note"] {
+  --callout-color: 0, 184, 255 !important;
+}
+.callout[data-callout="quote"], .callout[data-callout="abstract"] {
+  --callout-color: 127, 0, 218 !important;
+}
+
+
+/* ============================================================
+   ✨ FLASHY MEDIA — PPTX + IMAGES (electric magenta, live flash)
+   Placed last so it WINS over the .pptx PRESENTATIONS rule above.
+   Always-on glow + hue flash = impossible to miss in the explorer.
+   ============================================================ */
+
+@keyframes tc-flash {
+  0%, 100% { filter: brightness(1.05) saturate(1.2); box-shadow: 0 0 8px var(--uc, #FF00E5); }
+  50%      { filter: brightness(1.45) saturate(1.7); box-shadow: 0 0 18px 3px var(--uc, #FF00E5); }
+}
+
+/* 🖼️ IMAGES */
+body .nav-file-title[data-path$=".png" i],
+body .nav-file-title[data-path$=".jpg" i],
+body .nav-file-title[data-path$=".jpeg" i],
+body .nav-file-title[data-path$=".gif" i],
+body .nav-file-title[data-path$=".webp" i],
+body .nav-file-title[data-path$=".svg" i],
+body .nav-file-title[data-path$=".bmp" i],
+body .nav-file-title[data-path$=".heic" i],
+body .nav-file-title[data-path$=".avif" i],
+body .nav-file-title[data-path$=".tiff" i] {
+  --uc: #FF00E5; --uc-bg: rgba(255, 0, 229, 0.50); --uc-bg-hover: rgba(255, 0, 229, 0.74); --uc-emoji: '🖼️';
+}
+
+/* 🎬 PPTX (override fuchsia → same flashy magenta family) */
+body .nav-file-title[data-path$=".pptx" i],
+body .nav-file-title[data-path$=".ppt" i] {
+  --uc: #FF00E5; --uc-bg: rgba(255, 0, 229, 0.50); --uc-bg-hover: rgba(255, 0, 229, 0.74); --uc-emoji: '🎬';
+}
+
+/* shared FLASH treatment — gradient border + permanent glow + pulse */
+body .nav-file-title[data-path$=".png" i],
+body .nav-file-title[data-path$=".jpg" i],
+body .nav-file-title[data-path$=".jpeg" i],
+body .nav-file-title[data-path$=".gif" i],
+body .nav-file-title[data-path$=".webp" i],
+body .nav-file-title[data-path$=".svg" i],
+body .nav-file-title[data-path$=".bmp" i],
+body .nav-file-title[data-path$=".heic" i],
+body .nav-file-title[data-path$=".avif" i],
+body .nav-file-title[data-path$=".tiff" i],
+body .nav-file-title[data-path$=".pptx" i],
+body .nav-file-title[data-path$=".ppt" i] {
+  border-left: 7px solid transparent !important;
+  border-image: linear-gradient(180deg, #FF00E5 0%, #FFB300 50%, #00E5FF 100%) 1 !important;
+  animation: tc-flash 1.6s ease-in-out infinite;
+}
+body .nav-file-title[data-path$=".pptx" i] .nav-file-title-content::after,
+body .nav-file-title[data-path$=".png" i] .nav-file-title-content::after,
+body .nav-file-title[data-path$=".jpg" i] .nav-file-title-content::after,
+body .nav-file-title[data-path$=".jpeg" i] .nav-file-title-content::after {
+  content: ' ✨'; margin-left: 4px;
+}
+
+
+/* ============================================================
+   END — v6 (sidebar NEON + CONTENT INK + FLASHY MEDIA)
+   ============================================================ */

@@ -1,0 +1,385 @@
+/* ============================================================
+   COMMAND CENTER CSS — scoped to .dashboard cssclass
+   Second Brain base standard brand: #6600AE / #7F00DA / #F8F060 / #1A0033
+   ============================================================ */
+
+/* ── 1. Page chrome ─────────────────────────────────────────── */
+
+.dashboard.markdown-preview-view .inline-title,
+.dashboard.markdown-source-view .inline-title {
+  display: none;
+}
+
+.dashboard.markdown-preview-view,
+.dashboard.markdown-source-view .cm-content {
+  max-width: 100% !important;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+/* Remove default readable-line-width constraint on dashboard */
+.dashboard .markdown-preview-section {
+  max-width: 100%;
+}
+
+/* ── 2. Hero banner ─────────────────────────────────────────── */
+
+.dashboard .callout[data-callout="hero"] {
+  background: linear-gradient(135deg, #1A0033 0%, #3D0080 50%, #6600AE 100%);
+  border: none;
+  border-radius: 16px;
+  padding: 2rem 2.5rem 1.8rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 32px rgba(102, 0, 174, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard .callout[data-callout="hero"]::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(248, 240, 96, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.dashboard .callout[data-callout="hero"] .callout-title {
+  display: none;
+}
+
+.dashboard .callout[data-callout="hero"] .callout-content {
+  color: #ffffff !important;
+}
+
+.dashboard .callout[data-callout="hero"] .callout-content h1,
+.dashboard .callout[data-callout="hero"] .callout-content h2 {
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.4rem;
+  line-height: 1.15;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+.dashboard .callout[data-callout="hero"] .callout-content p {
+  color: rgba(255,255,255,0.75);
+  font-size: 1rem;
+  margin: 0 0 1.2rem;
+}
+
+/* Quick-nav links inside hero */
+.dashboard .callout[data-callout="hero"] .callout-content a {
+  display: inline-block;
+  background: rgba(255,255,255,0.12);
+  color: #F8F060 !important;
+  border: 1px solid rgba(248,240,96,0.35);
+  border-radius: 6px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  margin: 0 0.3rem 0.3rem 0;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.dashboard .callout[data-callout="hero"] .callout-content a:hover {
+  background: rgba(248,240,96,0.2);
+  border-color: #F8F060;
+}
+
+/* ── 3. Generic card styling for all callouts ───────────────── */
+
+.dashboard .callout {
+  border-radius: 12px;
+  border-left-width: 3px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(4px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dashboard .callout:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* ── 4. Custom callout palettes ─────────────────────────────── */
+
+/* [!purple] — brand brand */
+.dashboard .callout[data-callout="purple"] {
+  --callout-color: 102, 0, 174;
+  --callout-icon: lucide-brain-circuit;
+  background: rgba(102, 0, 174, 0.08);
+  border-left-color: #6600AE;
+}
+
+/* [!claude] — Anthropic coral */
+.dashboard .callout[data-callout="claude"] {
+  --callout-color: 217, 119, 87;
+  --callout-icon: lucide-bot;
+  background: rgba(217, 119, 87, 0.08);
+  border-left-color: #D97757;
+}
+
+.dashboard .callout[data-callout="claude"] .callout-title-inner::before {
+  content: "Claude ";
+  color: #D97757;
+  font-weight: 700;
+}
+
+/* [!codex] — OpenAI green */
+.dashboard .callout[data-callout="codex"] {
+  --callout-color: 16, 163, 127;
+  --callout-icon: lucide-code-2;
+  background: rgba(16, 163, 127, 0.08);
+  border-left-color: #10A37F;
+}
+
+.dashboard .callout[data-callout="codex"] .callout-title-inner::before {
+  content: "Codex ";
+  color: #10A37F;
+  font-weight: 700;
+}
+
+/* [!gemini] — Google blue */
+.dashboard .callout[data-callout="gemini"] {
+  --callout-color: 66, 133, 244;
+  --callout-icon: lucide-sparkles;
+  background: rgba(66, 133, 244, 0.08);
+  border-left-color: #4285F4;
+}
+
+.dashboard .callout[data-callout="gemini"] .callout-title-inner::before {
+  content: "Gemini ";
+  color: #4285F4;
+  font-weight: 700;
+}
+
+/* [!dust] — Dust orange */
+.dashboard .callout[data-callout="dust"] {
+  --callout-color: 255, 149, 51;
+  --callout-icon: lucide-layers;
+  background: rgba(255, 149, 51, 0.08);
+  border-left-color: #FF9533;
+}
+
+.dashboard .callout[data-callout="dust"] .callout-title-inner::before {
+  content: "Dust ";
+  color: #FF9533;
+  font-weight: 700;
+}
+
+/* [!stat] — big number widget */
+.dashboard .callout[data-callout="stat"] {
+  --callout-color: 127, 0, 218;
+  --callout-icon: lucide-trending-up;
+  background: rgba(127, 0, 218, 0.06);
+  border-left-color: #7F00DA;
+  text-align: center;
+}
+
+.dashboard .callout[data-callout="stat"] .callout-title {
+  justify-content: center;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+  margin-bottom: 0.25rem;
+}
+
+.dashboard .callout[data-callout="stat"] .callout-content strong,
+.dashboard .callout[data-callout="stat"] .callout-content b {
+  display: block;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #7F00DA;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+/* Dark-theme safe: override to brighter value */
+.theme-dark .dashboard .callout[data-callout="stat"] .callout-content strong,
+.theme-dark .dashboard .callout[data-callout="stat"] .callout-content b {
+  color: #B05DFF;
+}
+
+/* [!grid] — layout container for stat cards (flex row) */
+.dashboard .callout[data-callout="grid"] {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard .callout[data-callout="grid"]:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.dashboard .callout[data-callout="grid"] .callout-title {
+  display: none;
+}
+
+.dashboard .callout[data-callout="grid"] .callout-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.dashboard .callout[data-callout="grid"] .callout-content .callout {
+  flex: 1 1 180px;
+  min-width: 140px;
+  max-width: 260px;
+  margin-bottom: 0;
+}
+
+/* ── 5. Section headings ────────────────────────────────────── */
+
+.dashboard .markdown-preview-section h2 {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #6600AE;
+  border-bottom: 2px solid rgba(102, 0, 174, 0.2);
+  padding-bottom: 0.35rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.theme-dark .dashboard .markdown-preview-section h2 {
+  color: #B05DFF;
+  border-bottom-color: rgba(176, 93, 255, 0.25);
+}
+
+/* ── 6. Dataview table polish ───────────────────────────────── */
+
+.dashboard .dataview.table-view-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.dashboard .dataview.table-view-table thead tr {
+  background: rgba(102, 0, 174, 0.1);
+}
+
+.dashboard .dataview.table-view-table thead th {
+  color: #6600AE;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid rgba(102, 0, 174, 0.2);
+  white-space: nowrap;
+}
+
+.theme-dark .dashboard .dataview.table-view-table thead th {
+  color: #C084FC;
+  background: rgba(127, 0, 218, 0.12);
+  border-bottom-color: rgba(127, 0, 218, 0.3);
+}
+
+.dashboard .dataview.table-view-table tbody tr {
+  transition: background 0.12s;
+}
+
+.dashboard .dataview.table-view-table tbody tr:hover {
+  background: rgba(102, 0, 174, 0.05);
+}
+
+.theme-dark .dashboard .dataview.table-view-table tbody tr:hover {
+  background: rgba(127, 0, 218, 0.08);
+}
+
+.dashboard .dataview.table-view-table td {
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  vertical-align: middle;
+}
+
+.theme-dark .dashboard .dataview.table-view-table td {
+  border-bottom-color: rgba(255,255,255,0.04);
+}
+
+/* Transcript status pill styling */
+.dashboard .dataview.table-view-table td:has(.tag) .tag[href*="attached"] {
+  background: rgba(16, 163, 127, 0.15);
+  color: #10A37F;
+  border-color: #10A37F;
+}
+
+.dashboard .dataview.table-view-table td:has(.tag) .tag[href*="pending"] {
+  background: rgba(255, 149, 51, 0.15);
+  color: #FF9533;
+  border-color: #FF9533;
+}
+
+/* ── 7. Horizontal rule as section divider ──────────────────── */
+
+.dashboard hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(102, 0, 174, 0.25), transparent);
+  margin: 1.5rem 0;
+}
+
+/* ── 8. Footer ──────────────────────────────────────────────── */
+
+.dashboard .markdown-preview-section > blockquote:last-of-type,
+.dashboard p.dashboard-footer {
+  font-size: 0.7rem;
+  color: rgba(128,128,128,0.6);
+  text-align: center;
+  font-style: italic;
+  margin-top: 2rem;
+}
+
+/* ── 9. Quick-nav pill strip (outside hero) ─────────────────── */
+
+.dashboard .nav-pills a {
+  display: inline-block;
+  background: rgba(102, 0, 174, 0.08);
+  color: #6600AE;
+  border: 1px solid rgba(102, 0, 174, 0.25);
+  border-radius: 20px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  margin: 0 0.25rem 0.25rem 0;
+  transition: all 0.15s;
+}
+
+.dashboard .nav-pills a:hover {
+  background: #6600AE;
+  color: #ffffff;
+}
+
+/* ── 10. Embed frame cleanup ────────────────────────────────── */
+
+.dashboard .internal-embed .markdown-embed-title {
+  font-size: 0.7rem;
+  opacity: 0.5;
+}
+
+/* ── 11. Callout title colour overrides ────────────────────── */
+
+.dashboard .callout[data-callout="claude"] .callout-title {
+  color: #D97757;
+}
+.dashboard .callout[data-callout="codex"] .callout-title {
+  color: #10A37F;
+}
+.dashboard .callout[data-callout="gemini"] .callout-title {
+  color: #4285F4;
+}
+.dashboard .callout[data-callout="dust"] .callout-title {
+  color: #FF9533;
+}

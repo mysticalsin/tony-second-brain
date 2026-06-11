@@ -69,6 +69,7 @@
   "activeTab": "overview",
   "autoAssemble": true,
   "autoMorningBrief": true,
+  "orbVisible": true,
   "roi": {
     "hourlyRate": 100,
     "minPer1kOutput": 2.5,

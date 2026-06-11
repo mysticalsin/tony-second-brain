@@ -1,0 +1,18 @@
+{
+ "bid_id": "initech-ai-pilot",
+ "trend": "widening",
+ "meetings": [
+  {
+   "ref": "demo-meeting-4",
+   "date": "2026-06-03",
+   "spread": 0.3,
+   "one_line": "[DEMO] strong interest"
+  },
+  {
+   "ref": "demo-meeting-5",
+   "date": "2026-06-08",
+   "spread": 0.6,
+   "one_line": "[DEMO] budget owner went quiet"
+  }
+ ]
+}

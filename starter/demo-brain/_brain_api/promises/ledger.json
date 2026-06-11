@@ -1,0 +1,24 @@
+[
+ {
+  "promise_id": "demo1",
+  "owner": "you",
+  "beneficiary": "Globex",
+  "text": "[DEMO] Send Globex the revised architecture one-pager",
+  "due_date_inferred": "2026-06-12",
+  "meeting_ref": "demo-meeting-3",
+  "confidence": 0.92,
+  "status": "pending",
+  "days_overdue": 0
+ },
+ {
+  "promise_id": "demo2",
+  "owner": "Initech",
+  "beneficiary": "you",
+  "text": "[DEMO] Initech owes you their data-access decision",
+  "due_date_inferred": "2026-06-09",
+  "meeting_ref": "demo-meeting-5",
+  "confidence": 0.88,
+  "status": "stale",
+  "days_overdue": 2
+ }
+]

@@ -1,0 +1,23 @@
+{
+ "generated": "2026-06-11T00:00:00Z",
+ "due_48h": [
+  {
+   "id": "demo1",
+   "text": "[DEMO] Send Globex the revised architecture one-pager",
+   "due": "2026-06-12"
+  }
+ ],
+ "overdue_to_owner": [
+  {
+   "id": "demo2",
+   "text": "[DEMO] Initech owes you their data-access decision",
+   "due": "2026-06-09"
+  }
+ ],
+ "oldest_unresolved": {
+  "id": "demo2"
+ },
+ "keep_rate_30d": 0.86,
+ "total_pending": 2,
+ "total_ledger": 7
+}

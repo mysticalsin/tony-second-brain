@@ -6,7 +6,7 @@ const VIEW_TYPE = 'claude-command-center';
 const TERMINAL_VIEW_TYPE = 'terminal:terminal';
 
 // ── Build stamp — change this on every release so stale-code is detectable ───
-const PLUGIN_BUILD = '2026-06-10-note-synapse';
+const PLUGIN_BUILD = '2026-06-10-note-synapse+g1hud+g2tissue+g3editor+g4fleet+g5somatic';
 // One cheap once-per-load marker to /tmp (NOT the vault — no OneDrive sync) so the live build is
 // verifiable from outside Obsidian. (The per-60s tick.log + the redundant ~ load-stamp were removed.)
 try { require('fs').writeFileSync(require('path').join(require('os').tmpdir(), 'ultron-plugin-build.txt'), PLUGIN_BUILD + ' loaded ' + new Date().toISOString()); } catch (_) {}
@@ -551,6 +551,39 @@ class CommandCenterSettingTab extends PluginSettingTab {
         text.inputEl.style.fontFamily = 'monospace';
         text.inputEl.style.fontSize = '12px';
       });
+
+    // ── g5somatic settings ────────────────────────────────────────────────────
+    containerEl.createEl('h3', { text: 'g5somatic — somatic channels' });
+
+    const g5 = () => this.plugin.settings.g5somatic || {};
+    const g5save = async (patch) => {
+      this.plugin.settings.g5somatic = Object.assign({}, g5(), patch);
+      await this.plugin.saveSettings();
+    };
+
+    new Setting(containerEl)
+      .setName('Contradiction Binaural (#3)')
+      .setDesc('Play a 220/228Hz binaural beat (220ms, gain 0.04) when a new HIGH-severity contradiction lands in _brain_api/agent/contradictions.json. Polls every 60s. Never fires while orb is speaking.')
+      .addToggle(t => t.setValue(g5().binauralEnabled !== false).onChange(v => g5save({ binauralEnabled: v })));
+
+    new Setting(containerEl)
+      .setName('Promise Haptic (#2)')
+      .setDesc('macOS Notification (silent) + 80ms Web Audio tick when a promise crosses due. Polls every 5min. CAVEAT: true Taptic Engine needs a native helper; hook point is PromiseHaptic._hapticHook().')
+      .addToggle(t => t.setValue(g5().hapticEnabled !== false).onChange(v => g5save({ hapticEnabled: v })));
+
+    new Setting(containerEl)
+      .setName('Dock Badge Friction (#5)')
+      .setDesc('Set macOS dock badge to N = number of new meeting notes with negative-lexicon hits in Summary/Decisions sections. Polls every 5min. Clears when the note is opened. Falls back to a status-bar chip on non-macOS.')
+      .addToggle(t => t.setValue(g5().dockBadgeEnabled !== false).onChange(v => g5save({ dockBadgeEnabled: v })));
+
+    new Setting(containerEl)
+      .setName('Fleet Wallpaper auto-rerun (#4)')
+      .setDesc('Re-render the 29-cell trust heatmap to desktop every 30 minutes. Default OFF. CAVEAT: osascript sets desktop picture on the current space; multi-monitor order is not guaranteed — verify manually before enabling.')
+      .addToggle(t => t.setValue(!!g5().wallpaperAuto).onChange(v => {
+        g5save({ wallpaperAuto: v });
+        // Re-arm the auto timer immediately
+        if (this.plugin.fleetWallpaper) this.plugin.fleetWallpaper._armAuto();
+      }));
   }
 }
 
@@ -2871,6 +2904,1919 @@ class NoteSynapse {
   }
 }
 
+// ── RouteBreadcrumbs (g1hud-#19) — numbered waypoint chips on file-explorer rows ──
+// Collects ordered Read tool_use file paths during a turn; if >=3 by turn-end,
+// pins a numbered chip to each matching file-explorer row. Clickable (open file).
+// Fade out over 90s. Cap 8 chips. Full teardown in destroy(); register()'d on plugin.
+// House pattern: constructor(plugin), addRead(input), render(), destroy().
+class RouteBreadcrumbs {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._reads = []; // ordered Read paths for current turn
+    this._chips = []; // live chip DOM nodes + metadata
+    this._fadeTimer = null;
+  }
+
+  // Called from _brainAsk tool_use fan-out for every Read block.
+  addRead(input) {
+    try {
+      if (!input) return;
+      const raw = input.file_path || input.path || input.notebook_path;
+      if (!raw || typeof raw !== 'string') return;
+      const rel = this._relPath(raw);
+      if (!rel) return;
+      if (this._reads.length < 8 && !this._reads.includes(rel)) this._reads.push(rel);
+    } catch (_) {}
+  }
+
+  // Called at turn-end (result event). Renders chips if >=3 paths collected.
+  render() {
+    try {
+      if (document.hidden) return;
+      if (this._reads.length < 3) { this._reads = []; return; }
+      // tear down any chips from the previous turn
+      this._clearChips();
+      const reads = this._reads.slice(0, 8);
+      this._reads = [];
+      for (let i = 0; i < reads.length; i++) {
+        const rel = reads[i];
+        const row = this._fileEl(rel);
+        if (!row) continue;
+        const parent = row.closest('.nav-file') || row.closest('.nav-folder') || row.parentElement;
+        if (!parent) continue;
+        if (window.getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+        const chip = document.createElement('span');
+        chip.className = 'ccc-ux-bc-chip';
+        chip.textContent = String(i + 1);
+        chip.title = rel;
+        chip.style.opacity = '1';
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation(); e.preventDefault();
+          try { this.plugin.app.workspace.openLinkText(rel, '', false); } catch (_) {}
+        });
+        parent.appendChild(chip);
+        this._chips.push({ el: chip, parent });
+      }
+      if (!this._chips.length) return;
+      // fade out over 90s via opacity steps
+      const startMs = Date.now();
+      const tick = () => {
+        if (!this._chips.length) return;
+        const elapsed = (Date.now() - startMs) / 1000;
+        const opacity = Math.max(0, 1 - elapsed / 90);
+        for (const c of this._chips) { try { c.el.style.opacity = String(opacity); } catch (_) {} }
+        if (elapsed >= 90) { this._clearChips(); return; }
+        this._fadeTimer = setTimeout(tick, 2000); // update every 2s — cheap
+      };
+      this._fadeTimer = setTimeout(tick, 2000);
+    } catch (_) {}
+  }
+
+  // Clears all live chips from the DOM immediately.
+  _clearChips() {
+    clearTimeout(this._fadeTimer); this._fadeTimer = null;
+    for (const c of this._chips) { try { c.el.remove(); } catch (_) {} }
+    this._chips = [];
+  }
+
+  destroy() {
+    this._clearChips();
+    this._reads = [];
+  }
+
+  // Reuses SynapseLayer's path + fileEl logic verbatim.
+  _relPath(p) {
+    if (!p || typeof p !== 'string') return null;
+    if (p.startsWith('/')) {
+      const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+      if (base && p.startsWith(base + '/')) return p.slice(base.length + 1);
+      return null;
+    }
+    return p.replace(/^\.\//, '');
+  }
+
+  _fileEl(rel) {
+    const esc = (s) => (window.CSS && CSS.escape) ? CSS.escape(s) : s.replace(/"/g, '\\"');
+    let el = document.querySelector(`.nav-file-title[data-path="${esc(rel)}"]`)
+          || document.querySelector(`.nav-folder-title[data-path="${esc(rel)}"]`);
+    let p = rel;
+    while ((!el || !this._onScreen(el)) && p.includes('/')) {
+      p = p.slice(0, p.lastIndexOf('/'));
+      el = document.querySelector(`.nav-folder-title[data-path="${esc(p)}"]`);
+    }
+    return (el && this._onScreen(el)) ? el : null;
+  }
+
+  _onScreen(el) {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < window.innerHeight;
+  }
+}
+
+// ── g3editor: PromiseFaultLines (#12) ────────────────────────────────────────
+// For the ACTIVE note: loads _brain_api/promises/ledger.json, finds promises
+// whose meeting_ref or text contains a client/note name matching the current
+// file's path or frontmatter client. For each matched promise (status=pending
+// with days_overdue>0, OR status=stale|broken) draws an SVG hairline crack
+// overlaid on the nearest visible heading element. Crack width = 2..5px
+// proportional to days_overdue (cap 5). Click → compact hover-card (text, due,
+// meeting_ref). Recompute on file-open + ledger mtime change.
+// House pattern: constructor(plugin), destroy(). Compositor law: pointer-events
+// none on the crack canvas, only the card has events. document.hidden guard.
+class PromiseFaultLines {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._leafHandler = null;
+    this._cracks = []; // { svg, card, el }
+    this._hostEl = null;
+    this._ledgerMtime = 0;
+    this._pollTimer = null;
+    const app = plugin.app;
+    app.workspace.onLayoutReady(() => { if (!this._dead) this._attach(); });
+    this._leafHandler = app.workspace.on('active-leaf-change', () => { if (!this._dead) this._attach(); });
+    // poll ledger mtime every 60s to catch background writes
+    this._pollTimer = window.setInterval(() => { if (!this._dead && !document.hidden) this._maybeRefresh(); }, 60000);
+  }
+
+  destroy() {
+    this._dead = true;
+    clearInterval(this._pollTimer); this._pollTimer = null;
+    if (this._leafHandler) { try { this.plugin.app.workspace.offref(this._leafHandler); } catch (_) {} this._leafHandler = null; }
+    this._clearAll();
+  }
+
+  async _maybeRefresh() {
+    try {
+      const fs = require('fs'), path = require('path');
+      const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+      if (!base) return;
+      const ledgerPath = path.join(base, '_brain_api', 'promises', 'ledger.json');
+      const mt = (() => { try { return fs.statSync(ledgerPath).mtimeMs; } catch (_) { return 0; } })();
+      if (mt !== this._ledgerMtime) this._attach();
+    } catch (_) {}
+  }
+
+  async _attach() {
+    try {
+      if (document.hidden) return;
+      try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) { this._clearAll(); return; } } catch (_) {}
+      const app = this.plugin.app;
+      const file = app.workspace.getActiveFile();
+      if (!file) { this._clearAll(); return; }
+      const leaf = app.workspace.getMostRecentLeaf();
+      const view = leaf && leaf.view;
+      if (!view || view.getViewType() !== 'markdown') { this._clearAll(); return; }
+      // load ledger
+      const fs = require('fs'), path = require('path');
+      const base = (() => { try { return app.vault.adapter.basePath; } catch (_) { return null; } })();
+      if (!base) return;
+      const ledgerPath = path.join(base, '_brain_api', 'promises', 'ledger.json');
+      let ledger = [];
+      try {
+        const mt = fs.statSync(ledgerPath).mtimeMs;
+        this._ledgerMtime = mt;
+        ledger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+      } catch (_) { this._clearAll(); return; }
+      // build match keys from this file
+      const fname = file.basename.toLowerCase();
+      const fm = (app.metadataCache.getFileCache(file) || {}).frontmatter || {};
+      const clientStr = String(fm.client || fm.company || '').toLowerCase();
+      const matchKeys = [fname];
+      if (clientStr) matchKeys.push(clientStr);
+      // path segments (client name often in path)
+      const pathParts = file.path.toLowerCase().split('/').map(s => s.replace(/\.md$/, ''));
+      for (const p of pathParts) if (p.length >= 3) matchKeys.push(p);
+      // find relevant promises (pending with overdue>0, or stale/broken)
+      const relevant = ledger.filter(p => {
+        const isActive = (p.status === 'pending' && p.days_overdue > 0) || p.status === 'stale' || p.status === 'broken';
+        if (!isActive) return false;
+        const promiseText = (p.text || '').toLowerCase();
+        const meetingRef = (p.meeting_ref || '').toLowerCase();
+        return matchKeys.some(k => promiseText.includes(k) || meetingRef.includes(k));
+      });
+      this._clearAll();
+      if (!relevant.length) return;
+      // find headings in the active editor
+      const host = view.containerEl;
+      this._hostEl = host;
+      const headings = Array.from(host.querySelectorAll('h1,h2,h3,.HyperMD-header,.cm-header'));
+      if (!headings.length) return;
+      // assign promises to headings (round-robin through available headings)
+      const cap = Math.min(relevant.length, headings.length, 5);
+      for (let i = 0; i < cap; i++) {
+        const promise = relevant[i];
+        const heading = headings[Math.min(i, headings.length - 1)];
+        this._drawCrack(host, heading, promise);
+      }
+    } catch (_) {}
+  }
+
+  _drawCrack(host, headingEl, promise) {
+    try {
+      // crack width: days_overdue → 2..5px; stale/broken → 3px fixed
+      const days = (promise.days_overdue && promise.days_overdue > 0) ? promise.days_overdue : 0;
+      const crackW = promise.status === 'pending' ? Math.min(5, 2 + days * 0.6) : 3;
+      // position SVG over the heading
+      const container = headingEl.closest('.cm-line') || headingEl.parentElement || headingEl;
+      if (!container) return;
+      if (window.getComputedStyle(container).position === 'static') container.style.position = 'relative';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'ccc-ux-faultline');
+      svg.setAttribute('aria-hidden', 'true');
+      // build jagged lightning crack path across width
+      const W = 200, H = 10;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      // generate crack: 6 random-ish zigzag points
+      const pts = [[0, H / 2]];
+      const steps = 5;
+      for (let s = 1; s <= steps; s++) {
+        const x = (s / (steps + 1)) * W;
+        const y = H / 2 + (s % 2 === 0 ? -1 : 1) * (2 + Math.random() * 4);
+        pts.push([x, y]);
+      }
+      pts.push([W, H / 2]);
+      const d = 'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L');
+      const crack = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      crack.setAttribute('d', d);
+      crack.setAttribute('class', 'ccc-ux-faultline-path');
+      crack.setAttribute('stroke-width', String(crackW));
+      svg.appendChild(crack);
+      // click zone (invisible rect for hover-card)
+      const clickZone = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      clickZone.setAttribute('x', '0'); clickZone.setAttribute('y', '0');
+      clickZone.setAttribute('width', String(W)); clickZone.setAttribute('height', String(H));
+      clickZone.setAttribute('fill', 'transparent');
+      clickZone.style.pointerEvents = 'all';
+      clickZone.style.cursor = 'pointer';
+      svg.appendChild(clickZone);
+      // hover-card
+      const card = document.createElement('div');
+      card.className = 'ccc-ux-faultline-card';
+      card.innerHTML = `<div class="ccc-ux-fl-text">${_escHtml(promise.text || '—')}</div>`
+        + `<div class="ccc-ux-fl-meta">Due: ${promise.due_date_inferred || '—'} · ${_escHtml((promise.meeting_ref || '').replace(/\.md$/, '').slice(0, 60))}</div>`;
+      card.style.display = 'none';
+      clickZone.addEventListener('click', (e) => {
+        e.stopPropagation();
+        card.style.display = card.style.display === 'none' ? 'block' : 'none';
+      });
+      document.addEventListener('click', (e) => {
+        if (!card.contains(e.target) && !svg.contains(e.target)) card.style.display = 'none';
+      }, { once: false, capture: false });
+      container.appendChild(svg);
+      container.appendChild(card);
+      this._cracks.push({ svg, card, container });
+    } catch (_) {}
+  }
+
+  _clearAll() {
+    for (const c of this._cracks) {
+      try { c.svg.remove(); } catch (_) {}
+      try { c.card.remove(); } catch (_) {}
+      // restore position if we set it
+    }
+    this._cracks = [];
+    this._hostEl = null;
+  }
+}
+
+// tiny HTML escape helper (shared by g3editor features)
+function _escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── g3editor: ContradictionScar (#13) ────────────────────────────────────────
+// Tabs whose active note's path or frontmatter client/bid_id matches a
+// contradictions.json record's entity get a jagged crack SVG overlaid on the
+// tab header element. Polls mtime every 60s; record cleared → heal animation
+// (crack edges join over 800ms) then removal. Cap 4 tabs.
+// House pattern: constructor(plugin), destroy().
+class ContradictionScar {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._scars = new Map(); // tabEl → { svg, healTimer }
+    this._contradictions = [];
+    this._fileMtime = 0;
+    this._timer = null;
+    const app = plugin.app;
+    app.workspace.onLayoutReady(() => { if (!this._dead) this._tick(); });
+    this._leafHandler = app.workspace.on('layout-change', () => { if (!this._dead) this._tick(); });
+    this._timer = window.setInterval(() => { if (!this._dead && !document.hidden) this._tick(); }, 60000);
+  }
+
+  destroy() {
+    this._dead = true;
+    clearInterval(this._timer); this._timer = null;
+    if (this._leafHandler) { try { this.plugin.app.workspace.offref(this._leafHandler); } catch (_) {} this._leafHandler = null; }
+    this._clearAll();
+  }
+
+  async _tick() {
+    try {
+      if (document.hidden) return;
+      try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) { this._clearAll(); return; } } catch (_) {}
+      const fs = require('fs'), path = require('path');
+      const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+      if (!base) return;
+      const fp = path.join(base, '_brain_api', 'agent', 'contradictions.json');
+      let mt = 0;
+      try { mt = fs.statSync(fp).mtimeMs; } catch (_) { this._clearAll(); return; }
+      if (mt !== this._fileMtime) {
+        this._fileMtime = mt;
+        try {
+          const raw = JSON.parse(fs.readFileSync(fp, 'utf8'));
+          this._contradictions = (raw && raw.contradictions) || [];
+        } catch (_) { this._contradictions = []; }
+      }
+      this._applyScars();
+    } catch (_) {}
+  }
+
+  _applyScars() {
+    const app = this.plugin.app;
+    // collect all open leaf tab headers with their active file
+    const liveEntries = []; // { tabEl, file }
+    app.workspace.iterateAllLeaves(leaf => {
+      try {
+        const file = leaf.view && leaf.view.file;
+        if (!file) return;
+        // tab header element: .workspace-tab-header[data-type=...] or similar
+        const tabEl = leaf.tabHeaderEl || (leaf.containerEl && leaf.containerEl.closest('.workspace-tab-header'));
+        if (!tabEl) return;
+        liveEntries.push({ tabEl, file });
+      } catch (_) {}
+    });
+    // compute which tabs should have a scar
+    const toScar = new Set();
+    let scarCount = 0;
+    for (const { tabEl, file } of liveEntries) {
+      if (scarCount >= 4) break;
+      if (!this._matchesContradiction(file)) continue;
+      toScar.add(tabEl);
+      scarCount++;
+    }
+    // remove scars from tabs no longer matching
+    for (const [tabEl, scar] of this._scars) {
+      if (!toScar.has(tabEl)) {
+        // heal animation then remove
+        this._heal(tabEl, scar);
+      }
+    }
+    // add scars to new matching tabs
+    for (const tabEl of toScar) {
+      if (this._scars.has(tabEl)) continue;
+      this._addScar(tabEl);
+    }
+  }
+
+  _matchesContradiction(file) {
+    if (!this._contradictions.length) return false;
+    const fname = file.basename.toLowerCase();
+    const fm = (this.plugin.app.metadataCache.getFileCache(file) || {}).frontmatter || {};
+    const clientKey = String(fm.client || fm.bid_id || fm.company || '').toLowerCase();
+    const pathLower = file.path.toLowerCase();
+    for (const c of this._contradictions) {
+      const entity = (c.entity || '').toLowerCase();
+      if (!entity || entity.length < 2) continue;
+      if (fname.includes(entity) || pathLower.includes(entity)) return true;
+      if (clientKey && clientKey.includes(entity)) return true;
+    }
+    return false;
+  }
+
+  _addScar(tabEl) {
+    try {
+      if (window.getComputedStyle(tabEl).position === 'static') tabEl.style.position = 'relative';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'ccc-ux-conscar');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.setAttribute('viewBox', '0 0 120 6');
+      // two mirrored jagged lines from left and right that meet in the middle
+      const leftPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      leftPath.setAttribute('d', 'M0,3 L15,1 L30,4 L45,2 L55,3');
+      leftPath.setAttribute('class', 'ccc-ux-conscar-path ccc-ux-conscar-left');
+      const rightPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      rightPath.setAttribute('d', 'M120,3 L105,5 L90,2 L75,4 L65,3');
+      rightPath.setAttribute('class', 'ccc-ux-conscar-path ccc-ux-conscar-right');
+      svg.appendChild(leftPath); svg.appendChild(rightPath);
+      tabEl.appendChild(svg);
+      this._scars.set(tabEl, { svg, healTimer: null });
+    } catch (_) {}
+  }
+
+  _heal(tabEl, scar) {
+    try {
+      // animate edges joining (CSS transition on transform), then remove
+      if (scar.svg) {
+        scar.svg.classList.add('ccc-ux-conscar-healing');
+        scar.healTimer = setTimeout(() => {
+          try { scar.svg.remove(); } catch (_) {}
+        }, 850);
+      }
+      this._scars.delete(tabEl);
+    } catch (_) {}
+  }
+
+  _clearAll() {
+    for (const [, scar] of this._scars) {
+      clearTimeout(scar.healTimer);
+      try { scar.svg.remove(); } catch (_) {}
+    }
+    this._scars.clear();
+  }
+}
+
+// ── g3editor: MeetingSeismograph (#16) ───────────────────────────────────────
+// File-explorer rows under Meetings/: a lazy 90x14 canvas energy trace showing
+// sentence-length variance + speaker-turn frequency per decile of the note text.
+// Computed on row VISIBILITY (IntersectionObserver), max 20/session.
+// Cache: localStorage key = 'ccc-seismo-' + file.mtime (skip re-render on same mtime).
+// Hover tooltip: top 3 words per peak decile.
+// Static; no rAF. document.hidden guard. Pointer-events none on canvas.
+class MeetingSeismograph {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._observer = null;
+    this._rendered = new Set(); // paths already drawn this session
+    this._sessionCount = 0;
+    this._leafHandler = null;
+    const app = plugin.app;
+    app.workspace.onLayoutReady(() => { if (!this._dead) this._init(); });
+    // re-scan when file explorer refreshes (layout-change covers open/close/expand)
+    this._leafHandler = app.workspace.on('layout-change', () => { if (!this._dead) this._scanRows(); });
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._observer) { try { this._observer.disconnect(); } catch (_) {} this._observer = null; }
+    if (this._leafHandler) { try { this.plugin.app.workspace.offref(this._leafHandler); } catch (_) {} this._leafHandler = null; }
+    // remove drawn canvases
+    try { document.querySelectorAll('.ccc-ux-seismo').forEach(el => el.remove()); } catch (_) {}
+    this._rendered.clear();
+  }
+
+  _init() {
+    try {
+      if (!window.IntersectionObserver) return; // graceful no-op on older environments
+      this._observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const row = entry.target;
+          this._observer.unobserve(row);
+          if (this._sessionCount >= 20 || this._dead) continue;
+          this._renderRow(row);
+        }
+      }, { threshold: 0.1 });
+      this._scanRows();
+    } catch (_) {}
+  }
+
+  _scanRows() {
+    if (this._dead || !this._observer) return;
+    try {
+      // Meeting rows: nav-file-title with data-path starting with "Meetings/"
+      const rows = document.querySelectorAll('.nav-file-title[data-path]');
+      for (const row of rows) {
+        const p = row.getAttribute('data-path') || '';
+        if (!p.startsWith('Meetings/')) continue;
+        if (row.querySelector('.ccc-ux-seismo')) continue; // already drawn
+        this._observer.observe(row);
+      }
+    } catch (_) {}
+  }
+
+  async _renderRow(row) {
+    try {
+      if (document.hidden || this._sessionCount >= 20) return;
+      const filePath = row.getAttribute('data-path');
+      if (!filePath) return;
+      // check localStorage cache by mtime
+      const fs = require('fs'), path = require('path');
+      const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+      if (!base) return;
+      const abs = path.join(base, filePath);
+      let mt = 0;
+      try { mt = Math.floor(fs.statSync(abs).mtimeMs / 1000); } catch (_) { return; }
+      const cacheKey = 'ccc-seismo-' + mt;
+      let deciles;
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          deciles = JSON.parse(cached);
+        } else {
+          const text = fs.readFileSync(abs, 'utf8');
+          deciles = this._computeDeciles(text);
+          try { localStorage.setItem(cacheKey, JSON.stringify(deciles)); } catch (_) {}
+        }
+      } catch (_) { return; }
+      if (!deciles || !deciles.energy) return;
+      this._sessionCount++;
+      this._drawCanvas(row, deciles, filePath);
+    } catch (_) {}
+  }
+
+  // Cheap regex analysis: split text into 10 equal-length deciles.
+  // For each decile: energy = normalize(sentence length variance) + normalize(speaker turns).
+  _computeDeciles(text) {
+    try {
+      const N = 10;
+      const len = text.length;
+      if (len < 200) return null;
+      const step = Math.floor(len / N);
+      const energy = [];
+      const topWords = [];
+      for (let i = 0; i < N; i++) {
+        const chunk = text.slice(i * step, (i + 1) * step);
+        // sentence lengths via split on '. ' or '.\n'
+        const sentences = chunk.split(/[.!?]+/).filter(s => s.trim().length > 0);
+        const sentLens = sentences.map(s => s.trim().length);
+        const avgLen = sentLens.length ? sentLens.reduce((a, b) => a + b, 0) / sentLens.length : 40;
+        const variance = sentLens.length > 1
+          ? sentLens.reduce((a, b) => a + Math.pow(b - avgLen, 2), 0) / sentLens.length
+          : 0;
+        const normVariance = Math.min(1, Math.sqrt(variance) / 60);
+        // speaker turns: "SPEAKER_X:" or "**Name:**" patterns
+        const turns = (chunk.match(/^[A-Z][a-z].*?:/gm) || []).length
+          + (chunk.match(/speaker_\d/gi) || []).length;
+        const normTurns = Math.min(1, turns / 8);
+        energy.push(Math.max(normVariance, normTurns));
+        // top words: strip stop words, count freq
+        const words = chunk.toLowerCase().match(/\b[a-zA-ZÀ-ÿ]{4,}\b/g) || [];
+        const STOP = new Set(['that','this','with','have','from','they','will','been','were','their','when','what','your','more','also','some','into','than','about','there','would','could','which','these','those','after','before','being','other','over','such','only','through']);
+        const freq = {};
+        for (const w of words) { if (!STOP.has(w)) freq[w] = (freq[w] || 0) + 1; }
+        const top = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([w]) => w);
+        topWords.push(top);
+      }
+      // normalize energy to [0,1]
+      const maxE = Math.max(...energy, 0.01);
+      const normEnergy = energy.map(e => e / maxE);
+      return { energy: normEnergy, topWords };
+    } catch (_) { return null; }
+  }
+
+  _drawCanvas(row, deciles, filePath) {
+    try {
+      const W = 90, H = 14, N = 10;
+      const cv = document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      cv.className = 'ccc-ux-seismo';
+      cv.setAttribute('aria-hidden', 'true');
+      const ctx = cv.getContext('2d');
+      const colW = W / N;
+      for (let i = 0; i < N; i++) {
+        const e = deciles.energy[i] || 0;
+        // colour: low=muted purple, high=brand yellow
+        const r = Math.round(102 + 153 * e);   // 102→255
+        const g = Math.round(0 + 176 * e);     // 0→176
+        const b = Math.round(174 - 174 * e);   // 174→0 (purple to yellow-orange)
+        ctx.fillStyle = `rgba(${r},${g},${b},${0.55 + 0.4 * e})`;
+        const barH = Math.max(2, Math.round(e * H));
+        ctx.fillRect(i * colW, H - barH, colW - 1, barH);
+      }
+      // tooltip: top words from highest-energy decile
+      const peakIdx = deciles.energy.indexOf(Math.max(...deciles.energy));
+      const peakWords = (deciles.topWords[peakIdx] || []).join(', ');
+      cv.title = peakWords ? `Peak: ${peakWords}` : filePath.split('/').pop();
+      // inject into the row (after label text)
+      row.style.position = 'relative';
+      row.appendChild(cv);
+      this._rendered.add(filePath);
+    } catch (_) {}
+  }
+}
+
+// ── g2tissue: PheromoneLayer (#7) ────────────────────────────────────────────
+// Deposits decaying scent per ancestor folder based on agent write activity
+// (writes.jsonl mtime + 00_Inbox/from-dust/<agent>/ file mtimes). Half-life 4h.
+// Renders as background wash on file-explorer folder rows — warm amber→coral by
+// intensity, CSS background with alpha. Cold folders: no style at all.
+// Scan throttled 60s. Full repaint cap 1/min or on data change.
+// House pattern: constructor(plugin), destroy(). Instantiate + register()'d on plugin.
+class PheromoneLayer {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._scent = new Map();  // folder path -> intensity 0..1
+    this._scanTimer = null;
+    this._paintTimer = null;
+    this._lastScan = 0;
+    this._lastPaint = 0;
+    this._dead = false;
+    this._leafHandler = null;
+    const app = plugin.app;
+    app.workspace.onLayoutReady(() => { if (!this._dead) this._scan(); });
+    // repaint when user opens/closes folders (DOM change)
+    this._leafHandler = app.workspace.on('layout-change', () => { if (!this._dead) this._schedulePaint(); });
+    this._scanTimer = window.setInterval(() => { if (!this._dead && !document.hidden) this._scan(); }, 60000);
+    this._paintTimer = window.setInterval(() => { if (!this._dead && !document.hidden) this._paint(); }, 60000);
+  }
+
+  destroy() {
+    this._dead = true;
+    clearInterval(this._scanTimer); this._scanTimer = null;
+    clearInterval(this._paintTimer); this._paintTimer = null;
+    if (this._leafHandler) { try { this.plugin.app.workspace.offref(this._leafHandler); } catch (_) {} this._leafHandler = null; }
+    this._clearAll();
+  }
+
+  // ── internals ──────────────────────────────────────────────────────────────
+  async _scan() {
+    const now = Date.now();
+    if (now - this._lastScan < 59000) return; // throttle
+    this._lastScan = now;
+    const fs = require('fs'), path = require('path');
+    const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+    if (!base) return;
+    const HALF_LIFE_MS = 4 * 60 * 60 * 1000; // 4h
+    const fresh = new Map(); // folder rel path -> latest mtime ms
+    const bump = (relFolder, ms) => {
+      const cur = fresh.get(relFolder) || 0;
+      if (ms > cur) fresh.set(relFolder, ms);
+    };
+    // 1. writes.jsonl mtime per agent in _agent_state/
+    try {
+      const aStateDir = path.join(base, '_agent_state');
+      const agents = fs.readdirSync(aStateDir, { withFileTypes: true });
+      for (const d of agents) {
+        if (!d.isDirectory()) continue;
+        const wj = path.join(aStateDir, d.name, 'writes.jsonl');
+        try { const s = fs.statSync(wj); bump('_agent_state/' + d.name, s.mtimeMs); } catch (_) {}
+      }
+    } catch (_) {}
+    // 2. 00_Inbox/from-dust/<agent>/ file mtimes (scan one level of files only)
+    try {
+      const dustDir = path.join(base, '00_Inbox', 'from-dust');
+      const agentDirs = fs.readdirSync(dustDir, { withFileTypes: true });
+      for (const d of agentDirs) {
+        if (!d.isDirectory()) continue;
+        const agentPath = path.join(dustDir, d.name);
+        try {
+          const files = fs.readdirSync(agentPath, { withFileTypes: true });
+          for (const f of files) {
+            if (!f.isFile()) continue;
+            try { const s = fs.statSync(path.join(agentPath, f.name)); bump('00_Inbox/from-dust/' + d.name, s.mtimeMs); } catch (_) {}
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
+    // 3. Decay: for each mtime, compute intensity = exp(-age/half_life*ln2)
+    const newScent = new Map();
+    for (const [folder, ms] of fresh) {
+      const age = now - ms;
+      if (age < 0) continue; // future mtime — skip
+      const intensity = Math.exp(-age / HALF_LIFE_MS * Math.LN2);
+      if (intensity < 0.02) continue; // cold — omit
+      // propagate to ancestor folders up to root (3 levels max to avoid over-saturating root)
+      const parts = folder.split('/');
+      for (let depth = 1; depth <= Math.min(parts.length, 3); depth++) {
+        const anc = parts.slice(0, depth).join('/');
+        const cur = newScent.get(anc) || 0;
+        // ancestor gets fractional scent: attenuate by depth
+        const att = intensity * Math.pow(0.6, parts.length - depth);
+        if (att > cur) newScent.set(anc, att);
+      }
+      const cur2 = newScent.get(folder) || 0;
+      if (intensity > cur2) newScent.set(folder, intensity);
+    }
+    this._scent = newScent;
+    this._paint();
+  }
+
+  _schedulePaint() {
+    // debounce rapid layout changes
+    clearTimeout(this._paintDebounce);
+    this._paintDebounce = setTimeout(() => this._paint(), 300);
+  }
+
+  _paint() {
+    if (this._dead || document.hidden) return;
+    try {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { this._clearAll(); return; }
+    } catch (_) {}
+    // clear stale styles first
+    document.querySelectorAll('.nav-folder-title[data-path]').forEach(el => {
+      el.style.removeProperty('background');
+    });
+    if (!this._scent.size) return;
+    for (const [folder, intensity] of this._scent) {
+      try {
+        // CSS.escape guard
+        const esc = (s) => (window.CSS && CSS.escape) ? CSS.escape(s) : s.replace(/"/g, '\\"');
+        const el = document.querySelector(`.nav-folder-title[data-path="${esc(folder)}"]`);
+        if (!el) continue;
+        // amber (255,160,0) at low intensity → coral (255,80,60) at high
+        const r = 255, g = Math.round(160 - 80 * intensity), b = Math.round(0 + 60 * intensity);
+        const alpha = Math.round(intensity * 0.35 * 255).toString(16).padStart(2, '0');
+        el.style.background = `rgba(${r},${g},${b},${intensity * 0.35})`;
+      } catch (_) {}
+    }
+    this._lastPaint = Date.now();
+  }
+
+  _clearAll() {
+    try {
+      document.querySelectorAll('.nav-folder-title[data-path]').forEach(el => {
+        el.style.removeProperty('background');
+      });
+    } catch (_) {}
+  }
+}
+
+// ── g2tissue: SedimentStrata (#9) ────────────────────────────────────────────
+// CM6 gutter decoration: for the active note, stack 1px hue bands — one per
+// agent that appears in that note's SBAP writes.jsonl history (match note path
+// against target_path entries). Cap 6 bands. Static per file-open; recompute
+// on active-leaf-change only. Uses a lightweight DOM gutter (not CodeMirror
+// StateField) injected into the editor container so it survives CM6 without
+// requiring codemirror package imports at the plugin layer.
+class SedimentStrata {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._leafHandler = null;
+    this._strata = null; // current injected gutter el
+    this._strataHost = null;
+    // 6 distinct hues for the 6 possible agent bands
+    this._HUE = [280, 30, 190, 120, 0, 60]; // purple, orange, teal, green, red, yellow
+    const app = plugin.app;
+    app.workspace.onLayoutReady(() => { if (!this._dead) this._attach(); });
+    this._leafHandler = app.workspace.on('active-leaf-change', () => { if (!this._dead) this._attach(); });
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._leafHandler) { try { this.plugin.app.workspace.offref(this._leafHandler); } catch (_) {} this._leafHandler = null; }
+    this._teardown();
+  }
+
+  async _attach() {
+    try {
+      const leaf = this.plugin.app.workspace.getMostRecentLeaf();
+      const view = leaf && leaf.view;
+      if (!view || view.getViewType() !== 'markdown') { this._teardown(); return; }
+      const file = this.plugin.app.workspace.getActiveFile();
+      if (!file) { this._teardown(); return; }
+      const bands = await this._computeBands(file.path);
+      this._teardown();
+      if (!bands.length) return;
+      // inject a 1-line-high gutter bar at the top of the editor container
+      const host = view.containerEl;
+      const bar = document.createElement('div');
+      bar.className = 'ccc-ux-strata-bar';
+      // each band = 1px segment, flexbox row
+      for (const hue of bands) {
+        const seg = document.createElement('div');
+        seg.className = 'ccc-ux-strata-seg';
+        seg.style.backgroundColor = `hsl(${hue},80%,55%)`;
+        bar.appendChild(seg);
+      }
+      host.prepend(bar);
+      this._strata = bar;
+      this._strataHost = host;
+    } catch (_) {}
+  }
+
+  _teardown() {
+    if (this._strata) { try { this._strata.remove(); } catch (_) {} this._strata = null; this._strataHost = null; }
+  }
+
+  async _computeBands(notePath) {
+    const fs = require('fs'), path = require('path');
+    const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+    if (!base) return [];
+    const aStateDir = path.join(base, '_agent_state');
+    const agentOrder = []; // ordered by first match
+    const seen = new Set();
+    try {
+      const agents = fs.readdirSync(aStateDir, { withFileTypes: true });
+      for (const d of agents) {
+        if (!d.isDirectory() || seen.size >= 6) break;
+        const wj = path.join(aStateDir, d.name, 'writes.jsonl');
+        try {
+          const raw = fs.readFileSync(wj, 'utf8');
+          for (const line of raw.split('\n')) {
+            if (!line.trim()) continue;
+            try {
+              const obj = JSON.parse(line);
+              const tp = obj.target_path || obj.target || '';
+              // match: note path ends with the target_path basename (no path sep sensitivity)
+              if (tp && (notePath.endsWith(tp) || tp.endsWith(notePath) || notePath.includes(tp) || tp.includes(notePath.split('/').pop()))) {
+                if (!seen.has(d.name)) { seen.add(d.name); agentOrder.push(d.name); }
+              }
+            } catch (_) {}
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
+    // map agent names to hues (deterministic: agent index mod hue array length)
+    const allAgents = [];
+    try {
+      const agents2 = fs.readdirSync(aStateDir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name);
+      allAgents.push(...agents2);
+    } catch (_) {}
+    return agentOrder.slice(0, 6).map(name => {
+      const idx = allAgents.indexOf(name);
+      return this._HUE[(idx >= 0 ? idx : 0) % this._HUE.length];
+    });
+  }
+}
+
+// ── g2tissue: GravityMass (#8) — GraphSynapse mass-overlay extension ─────────
+// Adds a mass-overlay mode to GraphSynapse: node render scale nudged by in-degree
+// (metadataCache.resolvedLinks count, computed once + cached 5min). Subtle (<=1.25x),
+// only while graph view is open, off when closed. Separate class to avoid rewriting
+// GraphSynapse; it hooks into the same _renderers() + wrap pattern.
+class GravityMass {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._active = false;
+    this._wrapN = new Map();   // node -> { orig, wrap }
+    this._massMap = null;      // path -> in-degree count
+    this._massBuildAt = 0;
+    this._raf = null;
+    this._dead = false;
+    this._leafHandler = null;
+    // Auto-start when a graph view opens; stop when all close.
+    this._leafHandler = plugin.app.workspace.on('layout-change', () => { if (!this._dead) this._checkGraphViews(); });
+    plugin.app.workspace.onLayoutReady(() => { if (!this._dead) this._checkGraphViews(); });
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._leafHandler) { try { this.plugin.app.workspace.offref(this._leafHandler); } catch (_) {} this._leafHandler = null; }
+    this._stop();
+  }
+
+  // Demo: pulse masses on/off (toggle active state).
+  pulseDemo() {
+    if (this._active) { this._stop(); new Notice('GravityMass: off', 2000); }
+    else { this._start(); new Notice('GravityMass: on — hub nodes scaled up to 1.25x', 3000); }
+  }
+
+  // ── internals ──────────────────────────────────────────────────────────────
+  _checkGraphViews() {
+    const open = this._renderers().length > 0;
+    if (open && !this._active) this._start();
+    else if (!open && this._active) this._stop();
+  }
+
+  _start() {
+    if (this._active || this._dead) return;
+    this._active = true;
+    this._buildMass();
+    this._applyAll();
+  }
+
+  _stop() {
+    this._active = false;
+    if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
+    // restore wrapped nodes
+    for (const [node, w] of this._wrapN) {
+      try { if (node.render === w.wrap) node.render = w.orig; } catch (_) {}
+    }
+    this._wrapN.clear();
+    for (const r of this._renderers()) { try { r.changed(); } catch (_) {} }
+  }
+
+  _buildMass() {
+    const now = Date.now();
+    if (this._massMap && now - this._massBuildAt < 5 * 60 * 1000) return; // 5min cache
+    const resolved = (() => { try { return this.plugin.app.metadataCache.resolvedLinks; } catch (_) { return {}; } })();
+    const counts = {}; // path -> in-degree
+    for (const [srcPath, links] of Object.entries(resolved)) {
+      for (const destPath of Object.keys(links || {})) {
+        counts[destPath] = (counts[destPath] || 0) + 1;
+      }
+    }
+    this._massMap = counts;
+    this._massBuildAt = now;
+  }
+
+  _applyAll() {
+    if (!this._active || this._dead) return;
+    try {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    } catch (_) {}
+    for (const r of this._renderers()) {
+      const nodes = this._nodesOf(r);
+      if (!nodes.length) continue;
+      // find max in-degree for normalization
+      let maxDeg = 1;
+      for (const n of nodes) { const d = (this._massMap && this._massMap[n.id]) || 0; if (d > maxDeg) maxDeg = d; }
+      for (const n of nodes) {
+        this._wrapMassNode(n, maxDeg);
+      }
+      try { r.changed(); } catch (_) {}
+    }
+  }
+
+  _wrapMassNode(node, maxDeg) {
+    if (this._wrapN.has(node) || !node || typeof node.render !== 'function') return;
+    const deg = (this._massMap && this._massMap[node.id]) || 0;
+    const scale = 1 + Math.min(0.25, (deg / Math.max(1, maxDeg)) * 0.25); // subtle: max 1.25x
+    const orig = node.render, self = this;
+    const wrap = function (...a) {
+      const res = orig.apply(this, a);
+      try {
+        if (!self._active || !node.circle || !node.circle.scale) return res;
+        // only nudge if not currently pulsing (SynapseLayer owns pulse scale)
+        const gs = self.plugin.graphSynapse;
+        const pulsing = gs && gs._pulses && gs._pulses.has(node);
+        if (!pulsing) { node.circle.scale.x = scale; node.circle.scale.y = scale; }
+      } catch (_) {}
+      return res;
+    };
+    this._wrapN.set(node, { orig, wrap });
+    node.render = wrap;
+  }
+
+  _renderers() {
+    const out = [];
+    try {
+      const ws = this.plugin.app.workspace;
+      for (const t of ['graph', 'localgraph']) {
+        for (const leaf of ws.getLeavesOfType(t)) {
+          const v = leaf.view, r = v && (v.renderer || v.dataEngine || v.engine);
+          if (r && r.nodes) out.push(r);
+        }
+      }
+    } catch (_) {}
+    return out;
+  }
+
+  _nodesOf(r) {
+    const n = r.nodes;
+    if (!n) return [];
+    if (Array.isArray(n)) return n;
+    if (n instanceof Map) return [...n.values()];
+    return Object.values(n);
+  }
+}
+
+// ── g2tissue: EvaporationTabs (#10) ──────────────────────────────────────────
+// Dashboard tab headers get a liquid-fill underline (CSS gradient height)
+// representing freshness of that tab's underlying _brain_api file vs a 60min
+// cadence. Drains continuously via CSS transition refreshed 1/min — no rAF.
+// Cold (100% stale) = empty underline. Fresh (0 age) = full underline.
+// House pattern: constructor(plugin), destroy().
+class EvaporationTabs {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._timer = null;
+    // Map tab-id -> relative vault path of the freshness anchor file
+    this._sources = {
+      overview: '_brain_api/bid/_open.json',
+      sales: '_brain_api/bid/_open.json',
+      meetings: '_brain_api/changes',      // directory mtime proxy
+      fleet: '_agent_state/_registry.json',
+      skills: '_agent_state/claude-code/stats.json',
+      me: '_agent_state/claude-code/stats.json',
+    };
+    plugin.app.workspace.onLayoutReady(() => { if (!this._dead) this._tick(); });
+    this._timer = window.setInterval(() => { if (!this._dead && !document.hidden) this._tick(); }, 60000);
+  }
+
+  destroy() {
+    this._dead = true;
+    clearInterval(this._timer); this._timer = null;
+    this._clearAll();
+  }
+
+  // ── internals ──────────────────────────────────────────────────────────────
+  async _tick() {
+    if (this._dead || document.hidden) return;
+    try {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { this._clearAll(); return; }
+    } catch (_) {}
+    const CADENCE_MS = 60 * 60 * 1000; // 60min refresh cadence
+    const fs = require('fs'), path = require('path');
+    const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+    if (!base) return;
+    // find all open CommandCenterView tab strips
+    const ws = this.plugin.app.workspace;
+    const leaves = ws.getLeavesOfType('claude-command-center');
+    if (!leaves.length) return;
+    for (const leaf of leaves) {
+      const view = leaf.view;
+      if (!view || !view._tabButtons) continue;
+      for (const [tabId, btn] of Object.entries(view._tabButtons)) {
+        try {
+          const src = this._sources[tabId];
+          if (!src) { this._clearBtn(btn); continue; }
+          const absPath = path.join(base, src);
+          let mtime = 0;
+          try { mtime = fs.statSync(absPath).mtimeMs; } catch (_) {}
+          const age = mtime ? Math.max(0, Date.now() - mtime) : CADENCE_MS;
+          // fillFraction: 1.0 = just refreshed, 0.0 = cadence elapsed
+          const fill = Math.max(0, 1 - age / CADENCE_MS);
+          this._applyBtn(btn, fill);
+        } catch (_) { this._clearBtn(btn); }
+      }
+    }
+  }
+
+  _applyBtn(btn, fill) {
+    // inject/update a ::after-style pseudo via a style attribute on a child span
+    let under = btn.querySelector('.ccc-ux-evap-under');
+    if (!under) {
+      under = document.createElement('span');
+      under.className = 'ccc-ux-evap-under';
+      btn.appendChild(under);
+    }
+    // width represents the liquid fill level; CSS transition drains it between ticks
+    under.style.setProperty('--evap-fill', String(fill));
+    under.style.width = (fill * 100).toFixed(1) + '%';
+  }
+
+  _clearBtn(btn) {
+    const under = btn && btn.querySelector('.ccc-ux-evap-under');
+    if (under) under.style.width = '0%';
+  }
+
+  _clearAll() {
+    try {
+      document.querySelectorAll('.ccc-ux-evap-under').forEach(el => { el.style.width = '0%'; });
+    } catch (_) {}
+  }
+}
+
+// ── g4fleet: TrustPatina (#14) ───────────────────────────────────────────────
+// Agent tiles render reputation R from _agent_state/<agent>/reputation.json.
+// R >= 0.7 → gloss sheen  |  0.4–0.69 → matte  |  < 0.4 → oxidized rust.
+// ONE shared feTurbulence SVG filter injected into <body>; all tiles ref it.
+class TrustPatina {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._filterId = 'ccc-rust-filter';
+    this._ensureFilter();
+  }
+
+  destroy() {
+    this._dead = true;
+    // leave the SVG filter — it's a cheap one-time body injection, harmless to keep
+  }
+
+  _ensureFilter() {
+    try {
+      if (document.getElementById(this._filterId)) return;
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;';
+      const defs = document.createElementNS(ns, 'defs');
+      const filt = document.createElementNS(ns, 'filter');
+      filt.setAttribute('id', this._filterId);
+      filt.setAttribute('x', '0%'); filt.setAttribute('y', '0%');
+      filt.setAttribute('width', '100%'); filt.setAttribute('height', '100%');
+      // turbulence for rust texture
+      const turb = document.createElementNS(ns, 'feTurbulence');
+      turb.setAttribute('type', 'fractalNoise');
+      turb.setAttribute('baseFrequency', '0.65');
+      turb.setAttribute('numOctaves', '3');
+      turb.setAttribute('stitchTiles', 'stitch');
+      turb.setAttribute('result', 'noise');
+      // desaturate + shift hue toward rust orange
+      const cm = document.createElementNS(ns, 'feColorMatrix');
+      cm.setAttribute('type', 'matrix');
+      cm.setAttribute('in', 'noise');
+      // shift noise toward rust: R=0.7 G=0.3 B=0.1 gives warm brownish
+      cm.setAttribute('values', '0.7 0.2 0 0 0.18  0.3 0.2 0 0 0.08  0.1 0.1 0 0 0.02  0 0 0 0.55 0');
+      cm.setAttribute('result', 'rustColor');
+      const blend = document.createElementNS(ns, 'feBlend');
+      blend.setAttribute('in', 'SourceGraphic');
+      blend.setAttribute('in2', 'rustColor');
+      blend.setAttribute('mode', 'multiply');
+      filt.appendChild(turb); filt.appendChild(cm); filt.appendChild(blend);
+      defs.appendChild(filt); svg.appendChild(defs);
+      document.body.appendChild(svg);
+    } catch (_) {}
+  }
+
+  // Return CSS class for a given R value
+  static tierClass(R) {
+    if (typeof R !== 'number' || isNaN(R)) return '';
+    if (R >= 0.7) return 'ccc-patina-gloss';
+    if (R >= 0.4) return 'ccc-patina-matte';
+    return 'ccc-patina-oxidized';
+  }
+
+  // Render a TRUST PATINA card into container, reading reputations from vault
+  async renderCard(container) {
+    if (this._dead) return;
+    const ad = this.plugin.app.vault.adapter;
+    let agents = [];
+    try {
+      const reg = JSON.parse(await ad.read('_agent_state/_registry.json'));
+      agents = (reg.agents || []).filter(a => a.agent_name && a.status === 'active');
+    } catch (_) { return; }
+    if (!agents.length) return;
+
+    // Read reputations in parallel (missing = null)
+    const reps = await Promise.all(agents.map(async a => {
+      try {
+        const r = JSON.parse(await ad.read(`_agent_state/${a.agent_name}/reputation.json`));
+        return { name: a.agent_name, R: typeof r.R === 'number' ? r.R : null, updated: r.updated || null };
+      } catch (_) {
+        return { name: a.agent_name, R: null, updated: null };
+      }
+    }));
+
+    // Only show agents that have reputation data
+    const withRep = reps.filter(r => r.R !== null);
+    if (!withRep.length) return;
+    withRep.sort((a, b) => (b.R || 0) - (a.R || 0));
+
+    const card = container.createDiv({ cls: 'ccc-card ccc-sec-fleet' });
+    card.createEl('p', { cls: 'ccc-eyebrow', text: 'AGENT TRUST PATINA' });
+    const grid = card.createDiv({ cls: 'ccc-patina-grid' });
+
+    for (const rep of withRep) {
+      const tier = TrustPatina.tierClass(rep.R);
+      const tile = grid.createDiv({ cls: 'ccc-patina-tile ' + tier });
+      tile.dataset.agent = rep.name;
+      const label = tile.createEl('span', { cls: 'ccc-patina-name', text: rep.name.replace(/-/g, '‑') });
+      const rLabel = tile.createEl('span', { cls: 'ccc-patina-r', text: 'R=' + rep.R.toFixed(2) });
+      const tipParts = ['R=' + rep.R.toFixed(2)];
+      if (tier === 'ccc-patina-gloss') tipParts.push('high trust');
+      else if (tier === 'ccc-patina-matte') tipParts.push('mid trust');
+      else tipParts.push('low trust — oxidized');
+      if (rep.updated) tipParts.push('updated ' + rep.updated.slice(0, 10));
+      tile.title = rep.name + ' · ' + tipParts.join(' · ');
+    }
+
+    // Legend
+    const leg = card.createDiv({ cls: 'ccc-patina-legend' });
+    [['ccc-patina-gloss', '≥0.7 gloss'], ['ccc-patina-matte', '0.4–0.7 matte'], ['ccc-patina-oxidized', '<0.4 rust']].forEach(([cls, lbl]) => {
+      const it = leg.createEl('span', { cls: 'ccc-patina-leg-item' });
+      it.createEl('span', { cls: 'ccc-patina-swatch ' + cls });
+      it.createEl('span', { text: lbl });
+    });
+  }
+}
+
+// ── g4fleet: AgentBreath (#15) ────────────────────────────────────────────────
+// Status-bar strip with up to 8 priority-agent glyphs.
+// Each glyph inhales (bumps scale) when the agent's stats.json last_active changes.
+// Exhale decays based on expected_cadence_hours. Silent >2× cadence → frozen mid-inhale + amber.
+class AgentBreath {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._el = null;        // status bar item element
+    this._glyphs = {};      // name → { el, lastActive, cadH }
+    this._pollTimer = null;
+    this._prevLastActive = {}; // name → last seen last_active string
+    this._init();
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+    // Obsidian destroys the status bar item when plugin unloads; no explicit remove needed
+  }
+
+  _init() {
+    try {
+      this._el = this.plugin.addStatusBarItem();
+      this._el.addClass('ccc-breath-bar');
+      this._el.title = 'Agent Breath — fleet activity';
+    } catch (_) { return; }
+
+    this.plugin.app.workspace.onLayoutReady(() => {
+      if (this._dead) return;
+      this._poll();
+      this._pollTimer = window.setInterval(() => { if (!this._dead && !document.hidden) this._poll(); }, 60000);
+    });
+  }
+
+  async _poll() {
+    try {
+      const ad = this.plugin.app.vault.adapter;
+      let agents = [];
+      try {
+        const reg = JSON.parse(await ad.read('_agent_state/_registry.json'));
+        // priority: active agents sorted by expected_cadence_hours asc (most frequent first)
+        agents = (reg.agents || [])
+          .filter(a => a.agent_name && a.status === 'active')
+          .sort((a, b) => (Number(a.expected_cadence_hours) || 999) - (Number(b.expected_cadence_hours) || 999))
+          .slice(0, 8);
+      } catch (_) { return; }
+
+      if (!this._el) return;
+      this._el.empty();
+
+      const now = Date.now();
+      for (const a of agents) {
+        let lastActive = null, cadH = Number(a.expected_cadence_hours) || 0;
+        try {
+          const s = JSON.parse(await ad.read(`_agent_state/${a.agent_name}/stats.json`));
+          lastActive = s.last_active || null;
+        } catch (_) {}
+
+        const prev = this._prevLastActive[a.agent_name];
+        const justWrote = lastActive && lastActive !== prev;
+        if (justWrote) this._prevLastActive[a.agent_name] = lastActive;
+
+        const silentH = lastActive ? (now - Date.parse(lastActive)) / 3600000 : null;
+        const frozen = cadH > 0 && silentH != null && silentH > cadH * 2;
+
+        const glyph = this._el.createEl('span', { cls: 'ccc-breath-glyph' });
+        glyph.textContent = this._agentGlyph(a.agent_name);
+        glyph.title = a.agent_name + (silentH != null ? ` · silent ${silentH.toFixed(1)}h` : ' · never active') + (frozen ? ' · FROZEN' : '');
+
+        if (frozen) {
+          glyph.classList.add('ccc-breath-frozen');
+        } else if (justWrote) {
+          glyph.classList.add('ccc-breath-inhale');
+          // remove after animation completes
+          setTimeout(() => { try { glyph.classList.remove('ccc-breath-inhale'); } catch (_) {} }, 1200);
+        } else if (cadH > 0 && silentH != null) {
+          // exhale: opacity decays proportional to silence vs cadence (clamp 0.3–1)
+          const decay = Math.max(0.3, 1 - Math.min(1, silentH / (cadH * 1.5)));
+          glyph.style.opacity = String(decay.toFixed(2));
+        }
+      }
+    } catch (_) {}
+  }
+
+  _agentGlyph(name) {
+    // Short deterministic emoji derived from agent name
+    const glyphs = ['◆','▲','●','■','✦','◉','▸','◈','◇','△','○','□','✧','◎','▷','◊'];
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xFFFF;
+    return glyphs[h % glyphs.length];
+  }
+}
+
+// ── g4fleet: SpendBloodstream (#17) ───────────────────────────────────────────
+// 2-6px line along dashboard bottom: thickness=today spend vs $200 budget,
+// hue blue→amber→red, pulse animation-duration = tokens/min last 5min (poll 60s).
+class SpendBloodstream {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._el = null;      // the bar element, attached when _attach() is called
+    this._pollTimer = null;
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+    if (this._el) { try { this._el.remove(); } catch (_) {} this._el = null; }
+  }
+
+  // Called from _buildShell after ccc-root is created. Attaches the bar element.
+  // Idempotent: detaches any previous element + timer before re-attaching.
+  attach(rootEl) {
+    if (this._dead || !rootEl) return;
+    try {
+      // Clean up previous attachment (e.g. view re-opened)
+      if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+      if (this._el) { try { this._el.remove(); } catch (_) {} this._el = null; }
+      this._el = rootEl.createDiv({ cls: 'ccc-bloodstream' });
+      this._update();
+      this._pollTimer = window.setInterval(() => {
+        if (!this._dead && !document.hidden) this._update();
+      }, 60000);
+    } catch (_) {}
+  }
+
+  async _update() {
+    if (!this._el || this._dead) return;
+    try {
+      const ad = this.plugin.app.vault.adapter;
+      const data = JSON.parse(await ad.read('_agent_state/claude-code/stats.json'));
+      const todayStr = new Date().toLocaleDateString('sv'); // YYYY-MM-DD
+      const todayData = (data.by_day || {})[todayStr] || {};
+      const todaySpend = todayData.cost_usd || 0;
+      const BUDGET = 200;
+
+      // thickness: 2px at 0, 6px at BUDGET+
+      const frac = Math.min(1, todaySpend / BUDGET);
+      const thick = (2 + frac * 4).toFixed(1);
+
+      // hue: blue(220) at 0, amber(40) at 0.5*budget, red(0) at budget
+      const hue = frac < 0.5 ? Math.round(220 - frac * 2 * 180) : Math.round(40 - (frac - 0.5) * 2 * 40);
+      const sat = 85, lit = frac >= 1 ? 42 : 52;
+      const color = `hsl(${hue},${sat}%,${lit}%)`;
+
+      // pulse speed: tokens/min over last 5 min → animation-duration
+      const now = Date.now();
+      let tokPerMin = 0;
+      const byDay = data.by_day || {};
+      // best proxy: sum output_tokens from last 2 day keys, divide by rough time window
+      // (we don't have sub-day granularity, so use today's tokens / minutes-elapsed-today)
+      const minutesElapsed = Math.max(1, (now - new Date(todayStr + 'T00:00:00').getTime()) / 60000);
+      tokPerMin = (todayData.output_tokens || 0) / minutesElapsed;
+      // map tokPerMin to animation duration: 3000 tok/min → 1s, 10 tok/min → 8s, clamp 0.8–12s
+      const dur = tokPerMin > 0 ? Math.max(0.8, Math.min(12, 18000 / (tokPerMin + 100))).toFixed(2) : '8';
+
+      this._el.style.height = thick + 'px';
+      this._el.style.background = color;
+      this._el.style.setProperty('--ccc-bs-dur', dur + 's');
+      this._el.title = `Spend bloodstream · today C$${todaySpend.toFixed(2)} / C$${BUDGET} budget · ${tokPerMin.toFixed(0)} tok/min`;
+      this._el.classList.toggle('ccc-bloodstream-warn', frac >= 0.5 && frac < 1);
+      this._el.classList.toggle('ccc-bloodstream-crit', frac >= 1);
+    } catch (_) {
+      // no data → thin static gray
+      if (this._el) {
+        this._el.style.height = '2px';
+        this._el.style.background = 'rgba(155,134,184,0.2)';
+        this._el.title = 'Spend bloodstream · no data';
+      }
+    }
+  }
+}
+
+// ── g4fleet: MetabolismTray (#6) ──────────────────────────────────────────────
+// Tries Electron Tray (remote.Tray); unavailable → single status-bar dot.
+// Pulse duration = mean fleet write-interval last hour (clamp 2–45s, recompute 5min).
+class MetabolismTray {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._tray = null;
+    this._trayAvailable = false;
+    this._sbEl = null;    // fallback status-bar dot
+    this._pulseTimer = null;
+    this._recomputeTimer = null;
+    this._currentPulseMs = 8000;
+    this._lastMeanMs = null;
+    this._init();
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._pulseTimer) { clearTimeout(this._pulseTimer); this._pulseTimer = null; }
+    if (this._recomputeTimer) { clearInterval(this._recomputeTimer); this._recomputeTimer = null; }
+    try { if (this._tray && this._tray.destroy) this._tray.destroy(); } catch (_) {}
+    this._tray = null;
+  }
+
+  _init() {
+    // Try Electron Tray
+    let trayOk = false;
+    try {
+      const electron = require('electron');
+      const remote = electron.remote || (electron.default && electron.default.remote);
+      if (remote && remote.Tray) {
+        // Attempt minimal tray creation — no icon path needed for a simple status item
+        // In Obsidian's Electron the Tray constructor needs a nativeImage or path;
+        // without a bundled icon we can't safely create one. We detect availability only.
+        this._trayAvailable = true;
+        trayOk = true;
+      }
+    } catch (_) {}
+
+    if (!trayOk) {
+      // Fallback: single status-bar dot
+      try {
+        this._sbEl = this.plugin.addStatusBarItem();
+        this._sbEl.addClass('ccc-metabolism-dot');
+        this._sbEl.title = 'Fleet metabolism — mean write interval (fallback; Electron Tray unavailable)';
+        this._sbEl.textContent = '⬤';
+      } catch (_) {}
+    }
+
+    this.plugin.app.workspace.onLayoutReady(() => {
+      if (this._dead) return;
+      this._recompute();
+      this._recomputeTimer = window.setInterval(() => {
+        if (!this._dead) this._recompute();
+      }, 5 * 60 * 1000);
+    });
+  }
+
+  async _recompute() {
+    try {
+      const ad = this.plugin.app.vault.adapter;
+      let reg = { agents: [] };
+      try { reg = JSON.parse(await ad.read('_agent_state/_registry.json')); } catch (_) {}
+      const now = Date.now();
+      const oneHourAgo = now - 3600000;
+      const timestamps = [];
+      for (const a of (reg.agents || [])) {
+        if (!a.agent_name) continue;
+        try {
+          const raw = await ad.read(`_agent_state/${a.agent_name}/writes.jsonl`);
+          const lines = raw.split('\n').filter(Boolean).slice(-50);
+          for (const l of lines) {
+            try {
+              const w = JSON.parse(l);
+              const t = Date.parse(w.ts || '');
+              if (t && t >= oneHourAgo) timestamps.push(t);
+            } catch (_) {}
+          }
+        } catch (_) {}
+      }
+      let meanMs = 8000; // default 8s
+      if (timestamps.length >= 2) {
+        timestamps.sort((a, b) => a - b);
+        const intervals = [];
+        for (let i = 1; i < timestamps.length; i++) intervals.push(timestamps[i] - timestamps[i - 1]);
+        const sum = intervals.reduce((a, b) => a + b, 0);
+        meanMs = Math.max(2000, Math.min(45000, sum / intervals.length));
+      }
+      this._currentPulseMs = meanMs;
+      this._lastMeanMs = meanMs;
+      this._applyPulse(meanMs);
+    } catch (_) {}
+  }
+
+  _applyPulse(ms) {
+    const s = (ms / 1000).toFixed(2);
+    if (this._sbEl) {
+      this._sbEl.style.setProperty('--ccc-met-dur', s + 's');
+      this._sbEl.title = `Fleet metabolism · mean write-interval ${(ms / 1000).toFixed(1)}s · Electron Tray unavailable`;
+    }
+  }
+
+  isTrayAvailable() { return this._trayAvailable; }
+}
+
+// ── g5somatic: ContradictionBinaural (#3) ─────────────────────────────────────
+// Polls _brain_api/agent/contradictions.json every 60s (mtime diff).
+// NEW high-severity contradiction → Web Audio 220/228Hz binaural beat, gain
+// 0.04, 220ms, stop+disconnect. Never fires while orb is speaking.
+// Setting: plugin.settings.g5somatic.binauralEnabled (default true).
+class ContradictionBinaural {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._pollTimer = null;
+    this._lastIds = null;   // Set<string> of ids seen last poll
+    this._lastMtime = 0;
+    plugin.app.workspace.onLayoutReady(() => { if (!this._dead) this._start(); });
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+  }
+
+  _start() {
+    this._poll();
+    this._pollTimer = window.setInterval(() => {
+      if (!this._dead && !document.hidden) this._poll();
+    }, 60000);
+  }
+
+  async _poll() {
+    try {
+      const s = this.plugin.settings && this.plugin.settings.g5somatic;
+      if (s && s.binauralEnabled === false) return;
+      const fs = require('fs'), path = require('path');
+      const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+      if (!base) return;
+      const file = path.join(base, '_brain_api', 'agent', 'contradictions.json');
+      let mt = 0;
+      try { mt = fs.statSync(file).mtimeMs; } catch (_) { return; }
+      if (mt === this._lastMtime && this._lastIds !== null) return; // unchanged
+      this._lastMtime = mt;
+      let data;
+      try { data = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { return; }
+      const items = (data.contradictions || []).filter(c => c.severity === 'high');
+      const newIds = new Set(items.map(c => c.id));
+      if (this._lastIds === null) { this._lastIds = newIds; return; } // first poll — baseline only
+      const fresh = items.filter(c => !this._lastIds.has(c.id));
+      this._lastIds = newIds;
+      if (!fresh.length) return;
+      // Guard: never while orb is speaking
+      if (document.querySelector('.ccc-orb-speaking')) return;
+      this._chime();
+    } catch (_) {}
+  }
+
+  _chime() {
+    try {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.22);
+      gain.connect(ctx.destination);
+      // Left: 220Hz, Right: 228Hz — classic binaural beat (8Hz delta)
+      const merger = ctx.createChannelMerger(2);
+      merger.connect(gain);
+      const oL = ctx.createOscillator(); oL.frequency.value = 220; oL.type = 'sine';
+      const oR = ctx.createOscillator(); oR.frequency.value = 228; oR.type = 'sine';
+      const pL = ctx.createStereoPanner(); pL.pan.value = -1;
+      const pR = ctx.createStereoPanner(); pR.pan.value = 1;
+      oL.connect(pL); pL.connect(merger, 0, 0);
+      oR.connect(pR); pR.connect(merger, 0, 1);
+      oL.start(); oR.start();
+      oL.stop(ctx.currentTime + 0.22); oR.stop(ctx.currentTime + 0.22);
+      setTimeout(() => { try { ctx.close(); } catch (_) {} }, 600);
+    } catch (_) {}
+  }
+}
+
+// ── g5somatic: PromiseHaptic (#2) ─────────────────────────────────────────────
+// Polls _brain_api/promises/summary.json every 5min.
+// Item newly crossing due (id appears in due_48h or overdue_to_owner that wasn't
+// seen before) → macOS Notification (silent:true, body ≤ 80 chars) + 80ms soft
+// Web Audio tick (gain 0.05, 80ms fade).
+// CAVEAT: true Taptic Engine haptic needs a native helper binary that sends
+// an IOKit haptic pattern — this hook point (_hapticHook) exists for that.
+// Setting: plugin.settings.g5somatic.hapticEnabled (default true).
+class PromiseHaptic {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._pollTimer = null;
+    this._seenIds = null;   // Set<string>
+    this._lastMtime = 0;
+    plugin.app.workspace.onLayoutReady(() => { if (!this._dead) this._start(); });
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+  }
+
+  _start() {
+    this._poll();
+    this._pollTimer = window.setInterval(() => {
+      if (!this._dead && !document.hidden) this._poll();
+    }, 5 * 60 * 1000);
+  }
+
+  async _poll() {
+    try {
+      const s = this.plugin.settings && this.plugin.settings.g5somatic;
+      if (s && s.hapticEnabled === false) return;
+      const fs = require('fs'), path = require('path');
+      const base = (() => { try { return this.plugin.app.vault.adapter.basePath; } catch (_) { return null; } })();
+      if (!base) return;
+      const file = path.join(base, '_brain_api', 'promises', 'summary.json');
+      let mt = 0;
+      try { mt = fs.statSync(file).mtimeMs; } catch (_) { return; }
+      if (mt === this._lastMtime && this._seenIds !== null) return;
+      this._lastMtime = mt;
+      let data;
+      try { data = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { return; }
+      const due = [
+        ...(data.due_48h || []),
+        ...(data.overdue_to_owner || []),
+      ];
+      const allIds = new Set(due.map(p => p.id));
+      if (this._seenIds === null) { this._seenIds = allIds; return; } // first poll — baseline
+      const fresh = due.filter(p => !this._seenIds.has(p.id));
+      this._seenIds = allIds;
+      for (const p of fresh) {
+        const body = (p.text || '').slice(0, 80);
+        this._notify(body);
+        this._tick();
+        this._hapticHook(p); // extension point for native Taptic
+      }
+    } catch (_) {}
+  }
+
+  _notify(body) {
+    try {
+      const electron = require('electron');
+      const remote = electron.remote || (electron.default && electron.default.remote);
+      const Notif = remote && (remote.Notification || (remote.app && window.Notification));
+      // Use web Notification API (available in Obsidian's Electron renderer)
+      if (window.Notification) {
+        const n = new window.Notification('Promise due', {
+          body: body || 'A promise is due',
+          silent: true,
+        });
+        setTimeout(() => { try { n.close(); } catch (_) {} }, 8000);
+      }
+    } catch (_) {}
+  }
+
+  _tick() {
+    try {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine'; osc.frequency.value = 520;
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.08);
+      setTimeout(() => { try { ctx.close(); } catch (_) {} }, 400);
+    } catch (_) {}
+  }
+
+  // Hook point for a native Taptic helper binary.
+  // To wire: exec a sidecar binary here that sends IOKit haptic pattern
+  // (HIDHapticPattern) or uses CoreHaptics via a Swift helper.
+  _hapticHook(promise) { /* native Taptic stub — override or extend here */ }
+}
+
+// ── g5somatic: DockBadgeFriction (#5) ─────────────────────────────────────────
+// Polls new meeting notes under Meetings/ every 5min (checks file mtimes).
+// For each new note: count negative-lexicon hits over Summary + Decisions
+// sections → setBadge(String(n)) via Electron remote.app.dock.
+// Fallback when dock API unavailable: status-bar chip showing "⚠ N".
+// Clears badge when the flagged note is opened.
+// CAVEAT: Electron remote.app.dock is only available on macOS; badge silently
+// no-ops on Windows/Linux (fallback chip fires on all platforms).
+class DockBadgeFriction {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._pollTimer = null;
+    this._seenMtimes = new Map(); // path → mtime
+    this._frictionPaths = new Set(); // paths that contributed to badge count
+    this._sbEl = null;
+    this._leafHandler = null;
+    this._dockAvail = false;
+    plugin.app.workspace.onLayoutReady(() => { if (!this._dead) this._init(); });
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+    if (this._leafHandler) { try { this.plugin.app.workspace.offref(this._leafHandler); } catch (_) {} this._leafHandler = null; }
+    if (this._sbEl) { try { this._sbEl.remove(); } catch (_) {} this._sbEl = null; }
+    this._clearBadge();
+  }
+
+  _init() {
+    // Try dock API
+    try {
+      const electron = require('electron');
+      const remote = electron.remote || (electron.default && electron.default.remote);
+      if (remote && remote.app && remote.app.dock) this._dockAvail = true;
+    } catch (_) {}
+
+    // Fallback status-bar chip (always created; hidden when badge works)
+    try {
+      this._sbEl = this.plugin.addStatusBarItem();
+      this._sbEl.addClass('ccc-friction-chip');
+      this._sbEl.style.display = 'none';
+      this._sbEl.title = 'Meeting friction badge';
+    } catch (_) {}
+
+    // Clear badge when user opens a flagged note
+    this._leafHandler = this.plugin.app.workspace.on('file-open', (file) => {
+      if (!file || !this._frictionPaths.has(file.path)) return;
+      this._frictionPaths.delete(file.path);
+      this._updateBadge();
+    });
+
+    this._poll();
+    this._pollTimer = window.setInterval(() => {
+      if (!this._dead && !document.hidden) this._poll();
+    }, 5 * 60 * 1000);
+  }
+
+  async _poll() {
+    try {
+      const s = this.plugin.settings && this.plugin.settings.g5somatic;
+      if (s && s.dockBadgeEnabled === false) return;
+      const ad = this.plugin.app.vault.adapter;
+      const fs = require('fs'), path = require('path');
+      const base = (() => { try { return ad.basePath; } catch (_) { return null; } })();
+      if (!base) return;
+      const meetingsDir = path.join(base, 'Meetings');
+      let entries = [];
+      try { entries = fs.readdirSync(meetingsDir, { withFileTypes: true }); } catch (_) { return; }
+      // Walk one level of sub-dirs + root
+      const mdFiles = [];
+      for (const e of entries) {
+        if (e.isFile() && e.name.endsWith('.md')) mdFiles.push(path.join(meetingsDir, e.name));
+        if (e.isDirectory()) {
+          try {
+            for (const sub of fs.readdirSync(path.join(meetingsDir, e.name), { withFileTypes: true })) {
+              if (sub.isFile() && sub.name.endsWith('.md'))
+                mdFiles.push(path.join(meetingsDir, e.name, sub.name));
+            }
+          } catch (_) {}
+        }
+      }
+      for (const abs of mdFiles) {
+        let mt = 0;
+        try { mt = fs.statSync(abs).mtimeMs; } catch (_) { continue; }
+        const prev = this._seenMtimes.get(abs);
+        this._seenMtimes.set(abs, mt);
+        if (prev === undefined) continue; // first scan — just record, don't fire
+        if (mt === prev) continue;        // unchanged
+        // New or updated note — score it
+        const relPath = abs.slice(base.length + 1).replace(/\\/g, '/');
+        const count = this._score(abs);
+        if (count > 0) this._frictionPaths.add(relPath);
+        else this._frictionPaths.delete(relPath);
+      }
+      this._updateBadge();
+    } catch (_) {}
+  }
+
+  _score(absPath) {
+    // Negative-lexicon hits over Summary and Decisions sections
+    const NEG = ['risk','concern','blocker','block','issue','escalat','fail','delay','overdue','unhappy','problem','complaint','reject','unclear','miss','cancel','not sure','pushback','stall','dispute'];
+    try {
+      const fs = require('fs');
+      const text = fs.readFileSync(absPath, 'utf8');
+      // Extract Summary + Decisions sections
+      const sectionRe = /^#{1,3}\s+(summary|decisions?|action|risk|concern)/gim;
+      let relevant = '';
+      let m;
+      while ((m = sectionRe.exec(text)) !== null) {
+        const start = m.index;
+        const end = text.indexOf('\n#', start + 1);
+        relevant += (end === -1 ? text.slice(start) : text.slice(start, end)) + '\n';
+      }
+      if (!relevant) relevant = text; // fall back to full text if no sections matched
+      const lower = relevant.toLowerCase();
+      let hits = 0;
+      for (const w of NEG) { let idx = 0; while ((idx = lower.indexOf(w, idx)) !== -1) { hits++; idx++; } }
+      return hits;
+    } catch (_) { return 0; }
+  }
+
+  _updateBadge() {
+    const n = this._frictionPaths.size;
+    // Dock badge
+    if (this._dockAvail) {
+      try {
+        const electron = require('electron');
+        const remote = electron.remote || (electron.default && electron.default.remote);
+        remote.app.dock.setBadge(n > 0 ? String(n) : '');
+      } catch (_) { this._dockAvail = false; } // fell through — use chip
+    }
+    // Status-bar chip (always kept in sync as fallback)
+    if (this._sbEl) {
+      if (n > 0) {
+        this._sbEl.textContent = `⚠ ${n}`;
+        this._sbEl.style.display = '';
+        this._sbEl.title = `Meeting friction · ${n} note(s) flagged · open to clear`;
+      } else {
+        this._sbEl.style.display = 'none';
+      }
+    }
+  }
+
+  _clearBadge() {
+    try {
+      const electron = require('electron');
+      const remote = electron.remote || (electron.default && electron.default.remote);
+      if (remote && remote.app && remote.app.dock) remote.app.dock.setBadge('');
+    } catch (_) {}
+    if (this._sbEl) this._sbEl.style.display = 'none';
+  }
+}
+
+// ── g5somatic: FleetWallpaper (#4) ────────────────────────────────────────────
+// Command 'UX: fleet wallpaper sync': render a 29-cell trust heatmap canvas
+// (one cell per active agent, coloured by reputation tier) → PNG temp file →
+// osascript set desktop picture (desktop 2 first; falls back to desktop 1).
+// Settings: plugin.settings.g5somatic.wallpaperEnabled (toggle for 30min
+// auto-rerun, default OFF). Auto-rerun itself is a setInterval registered here.
+// CAVEAT: osascript 'tell application "Finder" to set desktop picture' sets the
+// desktop for the CURRENT space/screen. Multi-monitor requires Screen index ≥ 2.
+// AppleScript has no guarantee which monitor is which — desktop 2 may be your
+// primary on some setups. Verify manually before enabling auto-rerun.
+// Requires macOS; silently no-ops on other platforms (osascript missing).
+class FleetWallpaper {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this._dead = false;
+    this._autoTimer = null;
+    this._armAuto();
+  }
+
+  destroy() {
+    this._dead = true;
+    if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; }
+  }
+
+  _armAuto() {
+    // Re-arm whenever settings change (called from sync() and from settings tab toggle)
+    if (this._autoTimer) { clearInterval(this._autoTimer); this._autoTimer = null; }
+    const s = this.plugin.settings && this.plugin.settings.g5somatic;
+    if (s && s.wallpaperAuto) {
+      this._autoTimer = window.setInterval(() => {
+        if (!this._dead && !document.hidden) this.sync(false);
+      }, 30 * 60 * 1000);
+    }
+  }
+
+  async sync(showNotice = true) {
+    try {
+      const ad = this.plugin.app.vault.adapter;
+      let agents = [];
+      try {
+        const reg = JSON.parse(await ad.read('_agent_state/_registry.json'));
+        agents = (reg.agents || []).filter(a => a.agent_name && a.status === 'active').slice(0, 29);
+      } catch (_) {}
+      if (!agents.length) {
+        if (showNotice) new Notice('Fleet Wallpaper: no active agents found', 3000);
+        return;
+      }
+
+      // Read reputation for each agent
+      const cells = [];
+      for (const a of agents) {
+        let rep = 0.5;
+        try {
+          const r = JSON.parse(await ad.read(`_agent_state/${a.agent_name}/reputation.json`));
+          rep = r.reputation_score != null ? Number(r.reputation_score) : rep;
+        } catch (_) {}
+        cells.push({ name: a.agent_name, rep });
+      }
+
+      // Render canvas
+      const { canvas, dataUrl } = this._render(cells);
+
+      // Write to temp PNG
+      const os = require('os'), path = require('path'), fs = require('fs');
+      const tmp = path.join(os.tmpdir(), 'ultron-fleet-wallpaper.png');
+      const b64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+      fs.writeFileSync(tmp, Buffer.from(b64, 'base64'));
+
+      // osascript — desktop 2 → fall back to desktop 1
+      const cp = require('child_process');
+      const script2 = `tell application "System Events" to tell every desktop to set picture to "${tmp}"`;
+      const script1 = `tell application "Finder" to set desktop picture to POSIX file "${tmp}"`;
+      let ok = false;
+      try {
+        cp.execFileSync('osascript', ['-e', script2], { timeout: 10000 });
+        ok = true;
+      } catch (_) {
+        try {
+          cp.execFileSync('osascript', ['-e', script1], { timeout: 10000 });
+          ok = true;
+        } catch (_2) {}
+      }
+
+      if (showNotice) {
+        if (ok) new Notice(`Fleet Wallpaper: ${cells.length} agents rendered → desktop updated`, 4000);
+        else new Notice(`Fleet Wallpaper: PNG written to ${tmp} (osascript failed — check macOS permissions)`, 6000);
+      }
+    } catch (e) {
+      if (showNotice) new Notice('Fleet Wallpaper error: ' + (e && e.message || String(e)), 5000);
+    }
+  }
+
+  _render(cells) {
+    // 29-cell grid: ~580×320 canvas (20px cells with gap)
+    const COLS = 7, CELL = 72, GAP = 8;
+    const rows = Math.ceil(cells.length / COLS);
+    const W = COLS * (CELL + GAP) + GAP;
+    const H = rows * (CELL + GAP) + GAP + 40; // +40 for title
+    const canvas = document.createElement('canvas');
+    canvas.width = W * 2; canvas.height = H * 2; // 2x for retina
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    // Background
+    ctx.fillStyle = '#1A0033';
+    ctx.fillRect(0, 0, W, H);
+    // Title
+    ctx.fillStyle = '#F8F060';
+    ctx.font = 'bold 13px "SF Mono", monospace';
+    ctx.fillText('FLEET TRUST', GAP, 22);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '10px "SF Mono", monospace';
+    ctx.fillText(new Date().toLocaleDateString('sv'), W - 72, 22);
+
+    for (let i = 0; i < cells.length; i++) {
+      const col = i % COLS, row = Math.floor(i / COLS);
+      const x = GAP + col * (CELL + GAP);
+      const y = 32 + GAP + row * (CELL + GAP);
+      const rep = cells[i].rep;
+      // Colour: green (rep≥0.7) → amber (0.4–0.69) → red (<0.4)
+      const color = rep >= 0.7 ? '#22c55e' : rep >= 0.4 ? '#f59e0b' : '#ef4444';
+      const alpha = 0.3 + rep * 0.7;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      const r = 6;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y); ctx.lineTo(x + CELL - r, y);
+      ctx.quadraticCurveTo(x + CELL, y, x + CELL, y + r);
+      ctx.lineTo(x + CELL, y + CELL - r);
+      ctx.quadraticCurveTo(x + CELL, y + CELL, x + CELL - r, y + CELL);
+      ctx.lineTo(x + r, y + CELL);
+      ctx.quadraticCurveTo(x, y + CELL, x, y + CELL - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      // Agent name (abbreviated)
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = '8px "SF Mono", monospace';
+      const label = (cells[i].name || '').replace(/-/g, '·').slice(0, 10);
+      ctx.fillText(label, x + 4, y + CELL - 6);
+      // Rep score
+      ctx.fillStyle = color;
+      ctx.font = 'bold 16px "SF Mono", monospace';
+      ctx.fillText(rep.toFixed(2), x + 4, y + 22);
+    }
+    return { canvas, dataUrl: canvas.toDataURL('image/png') };
+  }
+}
+
 // ── ThreatIndex — Machine POV substrate (HS-R2 #2) ───────────────────────────
 // One in-memory map: entity path → { level, reasons[] } built from REAL vault
 // signals only (metadataCache reverse-links + _brain_api/bid/_open.json), so
@@ -4532,6 +6478,11 @@ class CommandCenterView extends ItemView {
     // Content area
     this._contentEl = root.createDiv({ cls: 'ccc-content' });
 
+    // g4fleet-#17: spend bloodstream — 2-6px line at dashboard bottom (inside root, after content)
+    try {
+      if (this.plugin.spendBloodstream) this.plugin.spendBloodstream.attach(root);
+    } catch (_) {}
+
     // Tab state for meetings month switcher
     this._meetingsMonth = 'this'; // 'this' | 'last'
 
@@ -4985,6 +6936,126 @@ class CommandCenterView extends ItemView {
     this._aggroRadarCard(grid);
     this._raidBossCard(grid);
     this._corpseRunCard(grid);
+    this._pipelineTideCard(grid);
+  }
+
+  // ── g2tissue: Pipeline Tide (#11) ────────────────────────────────────────
+  // Water layer (SVG, one path, gentle 8s CSS sway — opacity/transform only).
+  // Waterline = mean of compressing-vs-widening across spread_tape trends.
+  // Each open bid = an island (height = stage rank). On trend regime-change since
+  // last render (persisted in localStorage) fire ONE expanding shockwave ring
+  // from that island (1.2s, once). Empty tapes → calm flat water + caption.
+  async _pipelineTideCard(grid) {
+    const ad = this.plugin.app.vault.adapter;
+    const card = grid.createDiv({ cls: 'ccc-card ccc-ux-tide-card' });
+    card.createEl('p', { cls: 'ccc-eyebrow', text: 'PIPELINE TIDE' });
+    try {
+      // load open bids
+      let bids = [];
+      try { const raw = await ad.read('_brain_api/bid/_open.json'); bids = (JSON.parse(raw).bids || []); } catch (_) {}
+      // stage rank for island height
+      const STAGE_RANK = { discover: 1, qualify: 2, propose: 3, negotiate: 4, won: 5, lost: 0 };
+      const stageRank = (s) => STAGE_RANK[(s || '').toLowerCase()] || 1;
+      // load spread_tapes
+      const tapes = [];
+      for (const bid of bids) {
+        try {
+          const raw2 = await ad.read(`_brain_api/bid/${bid.bid_id}/spread_tape.json`);
+          const t = JSON.parse(raw2);
+          tapes.push({ bid_id: bid.bid_id, client: bid.client || bid.company || bid.bid_id, stage: bid.stage, trend: t.trend || 'neutral', scores: t.scores || [] });
+        } catch (_) { tapes.push({ bid_id: bid.bid_id, client: bid.client || bid.company || bid.bid_id, stage: bid.stage, trend: 'neutral', scores: [] }); }
+      }
+      // compute waterline: fraction of bids with widening trend (0=all compressing, 1=all widening)
+      // low widening = high waterline (danger); none = mid
+      const wideCount = tapes.filter(t => t.trend === 'widening').length;
+      const totalCount = tapes.length || 1;
+      // widening = more spread/risk = waterline higher (tide rises)
+      const waterFrac = tapes.length ? wideCount / totalCount : 0.5; // 0..1
+      // check regime change vs last render
+      const LS_KEY = 'ccc-tide-last-trend';
+      let shockwaveIdx = -1;
+      try {
+        const prev = localStorage.getItem(LS_KEY);
+        if (prev !== null && prev !== String(wideCount) && tapes.length) {
+          // find the most-worsened bid (highest spread score increase)
+          let maxDelta = 0, bestIdx = 0;
+          for (let i = 0; i < tapes.length; i++) {
+            const sc = tapes[i].scores;
+            const delta = sc.length >= 2 ? sc[sc.length - 1] - sc[sc.length - 2] : 0;
+            if (delta > maxDelta) { maxDelta = delta; bestIdx = i; }
+          }
+          shockwaveIdx = bestIdx;
+        }
+        localStorage.setItem(LS_KEY, String(wideCount));
+      } catch (_) {}
+      // build SVG
+      const W = 420, H = 100;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('class', 'ccc-ux-tide-svg');
+      svg.setAttribute('aria-hidden', 'true');
+      // water fill (sway via CSS animation on the path)
+      const waterY = Math.round(H * (0.3 + waterFrac * 0.55)); // 30%..85% of height
+      // gentle wave path: two control points for a smooth sine shape
+      const halfW = W / 2;
+      const waveAmp = 5;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const buildD = (phase) => {
+        // phase: 0 or 1 (toggled by CSS animation via a class)
+        const y1 = waterY - waveAmp * (phase ? 1 : -1);
+        const y2 = waterY + waveAmp * (phase ? 1 : -1);
+        return `M0,${y1} C${halfW/2},${y2} ${halfW*1.5},${y1} ${W},${y2} L${W},${H} L0,${H} Z`;
+      };
+      path.setAttribute('d', buildD(0));
+      path.setAttribute('class', 'ccc-ux-tide-water');
+      svg.appendChild(path);
+      // islands
+      const ISLAND_COLORS = ['#6600AE', '#7F00DA', '#9933CC', '#B060E0', '#C890F0'];
+      tapes.forEach((t, i) => {
+        if (i >= 8) return; // cap 8 islands
+        const xFrac = (i + 0.5) / Math.max(tapes.length, 1);
+        const x = Math.round(xFrac * W);
+        const rank = stageRank(t.stage);
+        const islandH = 8 + rank * 6; // 14..44px
+        const islandW = 28;
+        const islandY = waterY - islandH;
+        const rx = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rx.setAttribute('x', String(x - islandW / 2));
+        rx.setAttribute('y', String(islandY));
+        rx.setAttribute('width', String(islandW));
+        rx.setAttribute('height', String(islandH));
+        rx.setAttribute('rx', '4');
+        rx.setAttribute('class', 'ccc-ux-tide-island');
+        rx.setAttribute('fill', ISLAND_COLORS[i % ISLAND_COLORS.length]);
+        rx.setAttribute('data-bid', t.bid_id);
+        // label
+        const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        txt.setAttribute('x', String(x));
+        txt.setAttribute('y', String(islandY - 3));
+        txt.setAttribute('class', 'ccc-ux-tide-label');
+        txt.setAttribute('text-anchor', 'middle');
+        txt.textContent = (t.client || t.bid_id).slice(0, 8);
+        svg.appendChild(rx);
+        svg.appendChild(txt);
+        // shockwave ring from this island on regime change
+        if (shockwaveIdx === i) {
+          const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          ring.setAttribute('cx', String(x));
+          ring.setAttribute('cy', String(waterY));
+          ring.setAttribute('r', '8');
+          ring.setAttribute('class', 'ccc-ux-tide-shockwave');
+          svg.appendChild(ring);
+        }
+      });
+      card.appendChild(svg);
+      if (!tapes.length) card.createEl('p', { cls: 'ccc-empty', text: 'No open bids with spread data.' });
+      // caption
+      const caption = card.createEl('p', { cls: 'ccc-ux-tide-caption' });
+      if (!tapes.length) caption.textContent = 'No tapes loaded — calm water.';
+      else caption.textContent = `${wideCount}/${tapes.length} widening · tide ${waterFrac > 0.5 ? 'rising' : waterFrac < 0.3 ? 'low' : 'mid'}`;
+    } catch (e) {
+      card.createEl('p', { cls: 'ccc-empty', text: 'Tide unavailable: ' + (e && e.message || String(e)) });
+    }
   }
 
   // ── CORPSE RUN (HS-R2 #13): dead bids drop loot that decays in 14 days ─────
@@ -6158,6 +8229,11 @@ class CommandCenterView extends ItemView {
         s.createEl('span', { cls: 'ccc-substat-lbl', text: l }); };
       tm('C$' + last.cost.toFixed(2), 'this week'); tm(fmtTokens(last.out), 'out tokens');
     }
+
+    // g4fleet-#14: trust patina card — reputation tier per active agent
+    try {
+      if (this.plugin.trustPatina) await this.plugin.trustPatina.renderCard(container);
+    } catch (_) {}
   }
 
   // ── Skills Tab ────────────────────────────────────────────────────────────
@@ -6482,6 +8558,8 @@ class JarvisOrb {
       const _rawSetState = this.orb.setState.bind(this.orb);
       this.orb.setState = (s) => {
         try { wrap.classList.toggle('ccc-orb-thinking', s === 'thinking'); } catch (_) {}
+        // g1hud-#18: track speaking state on wrap for keystroke-buffer listener
+        try { wrap.classList.toggle('ccc-orb-speaking', s === 'speaking'); } catch (_) {}
         _rawSetState(s);
       };
       this.orb.setState('idle');
@@ -6509,6 +8587,60 @@ class JarvisOrb {
     this._startKeepWarm(); // keep brain warm every 75s so cold-start cost never accumulates
     this._sweepTmp(); // clear stale voice temp files from crashed/interrupted runs
     this._loadUndoStack(); // restore last 20 undo snapshots so "undo that" survives a reload
+
+    // g1hud-#18: Input-Buffer Queue — capture printable keystrokes while orb is speaking
+    // Scoped: only when NO input/textarea/CM editor is focused.
+    try {
+      const ibqStrip = wrap.createDiv({ cls: 'ccc-ux-ibq-strip' });
+      this._ibqStrip = ibqStrip; this._ibqBuffer = []; this._pendingBuffer = null;
+      const IBQ_MAX = 12;
+      const ibqAddPill = (ch) => {
+        if (this._ibqBuffer.length >= IBQ_MAX) {
+          // drop oldest, remove its pill
+          this._ibqBuffer.shift();
+          const first = ibqStrip.querySelector('.ccc-ux-ibq-pill');
+          if (first) first.remove();
+        }
+        this._ibqBuffer.push(ch);
+        const pill = ibqStrip.createSpan({ cls: 'ccc-ux-ibq-pill', text: ch });
+        ibqStrip.appendChild(pill);
+      };
+      const ibqDrain = () => {
+        // staggered pop animation on all pills, then clear
+        const pills = Array.from(ibqStrip.querySelectorAll('.ccc-ux-ibq-pill'));
+        pills.forEach((p, i) => { setTimeout(() => p.classList.add('ccc-ux-ibq-drain'), i * 35); });
+        setTimeout(() => { while (ibqStrip.firstChild) ibqStrip.removeChild(ibqStrip.firstChild); }, pills.length * 35 + 250);
+      };
+      const ibqClear = () => {
+        this._ibqBuffer = []; this._pendingBuffer = null;
+        while (ibqStrip.firstChild) ibqStrip.removeChild(ibqStrip.firstChild);
+      };
+      this._ibqDrain = ibqDrain; this._ibqClear = ibqClear;
+      this._ibqKeyHandler = (e) => {
+        try {
+          if (!wrap.classList.contains('ccc-orb-speaking')) return; // only while speaking
+          const tag = document.activeElement && document.activeElement.tagName;
+          if (tag === 'INPUT' || tag === 'TEXTAREA') return; // don't steal from inputs
+          if (document.activeElement && (document.activeElement.classList.contains('cm-content') || document.activeElement.closest('.cm-editor'))) return; // CM6
+          if (e.key === 'Escape') { ibqClear(); return; }
+          if (e.metaKey || e.ctrlKey || e.altKey) return; // ignore modifier combos
+          if (e.key === 'Backspace') {
+            if (this._ibqBuffer.length) {
+              this._ibqBuffer.pop();
+              const last = ibqStrip.lastElementChild;
+              if (last) last.remove();
+            }
+            return;
+          }
+          if (e.key.length === 1) { // printable char
+            e.stopPropagation(); // don't let it reach editor
+            ibqAddPill(e.key);
+          }
+        } catch (_) {}
+      };
+      document.addEventListener('keydown', this._ibqKeyHandler, { capture: true });
+    } catch (_) {}
+
     if (this.plugin) { this.plugin.settings.orbVisible = true; this.plugin.saveSettings(); }
     this._setOrbFlag(true); // durable truth — survives data.json churn/corruption
   }
@@ -6557,6 +8689,9 @@ class JarvisOrb {
     // Stepper HUD: clear its interval + drop refs (DOM dies with this.el below). No leak across reloads.
     if (this._stepInt) { clearInterval(this._stepInt); this._stepInt = null; }
     this._stepRunning = false; this._stepEl = null; this._stepCells = null; this._stepTimer = null;
+    // g1hud-#18: remove IBQ keystroke listener
+    if (this._ibqKeyHandler) { try { document.removeEventListener('keydown', this._ibqKeyHandler, { capture: true }); } catch (_) {} this._ibqKeyHandler = null; }
+    this._ibqStrip = null; this._ibqBuffer = null; this._pendingBuffer = null;
     if (this._stream) { this._stream.getTracks().forEach(t => t.stop()); this._stream = null; }
     if (this._actx) { this._actx.close().catch(() => {}); this._actx = null; }
     if (this.el) { this.el.remove(); this.el = null; }
@@ -6652,7 +8787,7 @@ class JarvisOrb {
         const cell = this._stepCells[STEPS[i].key];
         if (!cell) continue;
         const mark = cell.querySelector('.ccc-step-mark');
-        cell.classList.remove('ccc-step-done', 'ccc-step-current', 'ccc-step-pending');
+        cell.classList.remove('ccc-step-done', 'ccc-step-current', 'ccc-step-pending', 'ccc-step-skipped'); // g1hud-#20: also clear skipped
         if (i < idx)      { cell.classList.add('ccc-step-done');    if (mark) mark.textContent = '✓'; }
         else if (i === idx){ cell.classList.add('ccc-step-current'); if (mark) mark.textContent = '●'; }
         else              { cell.classList.add('ccc-step-pending'); if (mark) mark.textContent = '○'; }
@@ -6694,6 +8829,28 @@ class JarvisOrb {
       if (gen !== this._stepHideGen) return; // a new turn started during the fade — keep it visible
       el.classList.remove('ccc-stepper-on', 'ccc-stepper-hiding');
     }, 600);
+  }
+
+  // g1hud-#20: strike-through skipped stage cells + brief white flash on the stepper row.
+  // Called when result arrives with zero tool calls (brain answered from injected context).
+  _skipStepperCells(keys) {
+    try {
+      if (!this._stepCells || !this._stepEl) return;
+      for (const k of keys) {
+        const cell = this._stepCells[k];
+        if (!cell) continue;
+        cell.classList.remove('ccc-step-done', 'ccc-step-current', 'ccc-step-pending');
+        cell.classList.add('ccc-step-skipped');
+        const mark = cell.querySelector('.ccc-step-mark');
+        if (mark) mark.textContent = '⟶';
+      }
+      // one 240ms white flash on the strip
+      const el = this._stepEl;
+      el.classList.remove('ccc-ux-skip-flash'); // reset to allow re-trigger
+      void el.offsetWidth; // force reflow so animation replays
+      el.classList.add('ccc-ux-skip-flash');
+      setTimeout(() => { try { el.classList.remove('ccc-ux-skip-flash'); } catch (_) {} }, 300);
+    } catch (_) {}
   }
 
   _drag(wrap) {
@@ -9024,6 +11181,8 @@ class JarvisOrb {
       // semantic returns nothing (locked, missing collection, or below score threshold).
       // Neither runs on greetings/clock/stop turns (useTools=false).
       if (useTools) this._setStage('recalling'); // HUD: knowledge-recall stage (only when tools/recall fire)
+      // g1hud-#19: reset breadcrumb state for this new turn
+      try { if (this.plugin.routeBreadcrumbs) { this.plugin.routeBreadcrumbs._reads = []; } } catch (_) {}
       const kb = useTools ? (this._semanticContext(text) || this._graphifyContext(text)) : '';
       // p6-#16 in-room wingman: if Tony named an open bid, pull its win-recs/scorecard/compliance-gaps
       // (read-only) so the answer is grounded in that bid's real state.
@@ -9049,13 +11208,18 @@ class JarvisOrb {
         (useTools ? `\n(Answer from the knowledge above when it actually answers Tony; otherwise Read the real file — prefer _brain_api/ for bids/accounts/pricing. Never guess. If you truly can't find it, say so briefly.)\n` : '') +
         (convo ? `\nEarlier in this voice conversation:\n${convo}\n\nTony just said: ${text}` : '\n' + text);
       const env = Object.assign(this._brainEnv(), { ULTRON_VOICE: '1', VAULT_BRAIN_QUIET: '1' });
-      const turn = { acc: '', full: '', chunks: 0, aborted: false };
+      const turn = { acc: '', full: '', chunks: 0, aborted: false, toolUseCount: 0 };
       this._brainTurn = turn;
+      // g1hud-#1: rolling 3s char/sec tracker for brain-breathing cadence
+      const _bbWin = []; // { t:timestamp, n:charCount }
+      const _bbSet = (cadence) => { try { document.body.style.setProperty('--ccc-brain-cadence', String(Math.max(0.2, Math.min(1, cadence)).toFixed(3))); } catch (_) {} };
+      _bbSet(1.0); // stream just started → fast cadence
       let settled = false, wd = null, stderr = '', exitCode = null;
       const finish = (err, out, code) => {
         if (settled) return; settled = true; clearTimeout(wd);
         if (this._brainProc === proc) this._brainProc = null;
         if (this._brainTurn === turn) this._brainTurn = null;
+        try { document.body.style.setProperty('--ccc-brain-cadence', '1'); } catch (_) {} // g1hud-#1: reset on stream end
         // Auth check: run regardless of err truthiness. Covers the case where the process
         // exits non-zero with an auth error in stderr (no JS Error object, but still bad).
         const ec = (code != null ? code : exitCode) || 0;
@@ -9110,15 +11274,28 @@ class JarvisOrb {
           if (e.type === 'assistant' && e.message && Array.isArray(e.message.content)) {
             for (const b of e.message.content) {
               if (b && b.type === 'tool_use') {
+                turn.toolUseCount++; // g1hud-#20: count tools used for skip-detection
                 try { this.plugin.synapse && this.plugin.synapse.noteToolUse(b.name, b.input); } catch (_) {}
                 try { this.plugin.graphSynapse && this.plugin.graphSynapse.noteToolUse(b.name, b.input); } catch (_) {}
                 try { this.plugin.noteSynapse && this.plugin.noteSynapse.noteToolUse(b.name, b.input); } catch (_) {}
+                // g1hud-#19: collect Read paths for breadcrumb waypoints
+                try { if (b.name === 'Read' && this.plugin.routeBreadcrumbs) this.plugin.routeBreadcrumbs.addRead(b.input); } catch (_) {}
               }
             }
           }
           if (e.type === 'stream_event') {
             const d = (e.event || {}).delta || {};
             if (d.type === 'text_delta' && d.text) {
+              // g1hud-#1: update rolling 3s char/sec window; map to [0.2,1.0] cadence
+              try {
+                const now = Date.now(); _bbWin.push({ t: now, n: d.text.length });
+                const cutoff = now - 3000; let total = 0;
+                while (_bbWin.length && _bbWin[0].t < cutoff) _bbWin.shift();
+                for (const w of _bbWin) total += w.n;
+                const cps = total / 3; // chars/sec over window
+                // map: 0 cps→0.2, 60 cps→1.0 (typical fast stream is ~30-80 cps)
+                _bbSet(0.2 + Math.min(0.8, cps / 75));
+              } catch (_) {}
               turn.full += d.text; turn.acc += d.text;
               for (;;) {
                 const re = turn.chunks === 0
@@ -9137,6 +11314,14 @@ class JarvisOrb {
               }
             }
           } else if (e.type === 'result') {
+            // g1hud-#20: cache-hit skip — if useTools turn but zero tool calls fired,
+            // the brain answered from injected recall context. Strike transcribing+recalling
+            // stepper cells and flash the row once (240ms).
+            if (useTools && turn.toolUseCount === 0) {
+              try { this._skipStepperCells(['transcribing', 'recalling']); } catch (_) {}
+            }
+            // g1hud-#19: render breadcrumb waypoints if >=3 Read paths collected
+            try { if (this.plugin.routeBreadcrumbs) this.plugin.routeBreadcrumbs.render(); } catch (_) {}
             const rest = this._stripMd(turn.acc.trim()); turn.acc = '';
             const filteredRest = this._filterReply(rest); // brain-ask-01: drop banned farewell phrases
             if (filteredRest && filteredRest.length >= 2 && !turn.aborted) { turn.chunks++; try { onSentence(filteredRest); } catch (_) {} }
@@ -9713,6 +11898,15 @@ class JarvisOrb {
   }
 
   async ask(text) {
+    // g1hud-#18: prepend any buffered keystrokes typed while orb was speaking
+    try {
+      if (this._ibqBuffer && this._ibqBuffer.length) {
+        const buffered = this._ibqBuffer.join('').trim();
+        if (buffered) text = buffered + (text ? ' ' + text : '');
+        if (this._ibqDrain) this._ibqDrain(); // staggered pill pop
+        this._ibqBuffer = []; this._pendingBuffer = null;
+      }
+    } catch (_) {}
     text = (text || '').trim();
     // Bail on empty OR non-speech (no word characters — e.g. a stray "..." or a sentinel that
     // slipped past _transcribe). Belt-and-suspenders for the [BLANK_AUDIO]-answers-silence bug.
@@ -10605,6 +12799,55 @@ class CommandCenterPlugin extends Plugin {
     this.register(() => { try { this.graphSynapse.destroy(); } catch (_) {} });
     this.noteSynapse = new NoteSynapse(this);
     this.register(() => { try { this.noteSynapse.destroy(); } catch (_) {} });
+    // g1hud-#19: route breadcrumbs — waypoint chips for Read paths per turn
+    this.routeBreadcrumbs = new RouteBreadcrumbs(this);
+    this.register(() => { try { this.routeBreadcrumbs.destroy(); } catch (_) {} });
+    // g2tissue-#7: pheromone trails — folder wash from agent write activity
+    this.pheromoneLayer = new PheromoneLayer(this);
+    this.register(() => { try { this.pheromoneLayer.destroy(); } catch (_) {} });
+    // g2tissue-#10: evaporation tabs — liquid-fill underline on tab headers
+    this.evaporationTabs = new EvaporationTabs(this);
+    this.register(() => { try { this.evaporationTabs.destroy(); } catch (_) {} });
+    // g2tissue-#8: gravity mass — in-degree scale overlay on graph nodes
+    this.gravityMass = new GravityMass(this);
+    this.register(() => { try { this.gravityMass.destroy(); } catch (_) {} });
+    // g2tissue-#9: sediment strata — agent hue bands in editor gutter
+    this.sedimentStrata = new SedimentStrata(this);
+    this.register(() => { try { this.sedimentStrata.destroy(); } catch (_) {} });
+    // g3editor-#12: promise fault lines — SVG hairline cracks on matched headings
+    this.promiseFaultLines = new PromiseFaultLines(this);
+    this.register(() => { try { this.promiseFaultLines.destroy(); } catch (_) {} });
+    // g3editor-#13: contradiction scar — jagged crack on tab headers matching contradiction entities
+    this.contradictionScar = new ContradictionScar(this);
+    this.register(() => { try { this.contradictionScar.destroy(); } catch (_) {} });
+    // g3editor-#16: meeting seismograph — lazy energy trace on Meetings/ file-explorer rows
+    this.meetingSeismograph = new MeetingSeismograph(this);
+    this.register(() => { try { this.meetingSeismograph.destroy(); } catch (_) {} });
+    // g4fleet-#14: trust patina — reputation-tier sheen on Fleet agent tiles
+    this.trustPatina = new TrustPatina(this);
+    this.register(() => { try { this.trustPatina.destroy(); } catch (_) {} });
+    // g4fleet-#15: agent breath — status-bar glyphs, inhale on write, exhale by cadence
+    this.agentBreath = new AgentBreath(this);
+    this.register(() => { try { this.agentBreath.destroy(); } catch (_) {} });
+    // g4fleet-#17: spend bloodstream — 2-6px spend-hued pulsing line at dashboard bottom
+    this.spendBloodstream = new SpendBloodstream(this);
+    this.register(() => { try { this.spendBloodstream.destroy(); } catch (_) {} });
+    // g4fleet-#6: metabolism tray — Electron Tray (try/catch) or fallback status-bar dot
+    this.metabolismTray = new MetabolismTray(this);
+    this.register(() => { try { this.metabolismTray.destroy(); } catch (_) {} });
+
+    // g5somatic-#3: contradiction binaural — 220/228Hz beat on new high-sev contradictions
+    this.contradictionBinaural = new ContradictionBinaural(this);
+    this.register(() => { try { this.contradictionBinaural.destroy(); } catch (_) {} });
+    // g5somatic-#2: promise haptic — macOS notification + soft tick on promise crossing due
+    this.promiseHaptic = new PromiseHaptic(this);
+    this.register(() => { try { this.promiseHaptic.destroy(); } catch (_) {} });
+    // g5somatic-#5: dock badge friction — negative-lexicon count on new meeting notes
+    this.dockBadgeFriction = new DockBadgeFriction(this);
+    this.register(() => { try { this.dockBadgeFriction.destroy(); } catch (_) {} });
+    // g5somatic-#4: fleet wallpaper — trust heatmap canvas → desktop PNG (command + optional auto-30min)
+    this.fleetWallpaper = new FleetWallpaper(this);
+    this.register(() => { try { this.fleetWallpaper.destroy(); } catch (_) {} });
 
     // ── Machine POV (HS-R2 #2): targeting reticles on entity wikilinks ───────
     // ThreatIndex is the substrate (O(1) lookups, receipts mandatory); the
@@ -10836,6 +13079,380 @@ class CommandCenterPlugin extends Plugin {
           } catch (_) {}
         }
       } });
+    // ── g1hud demo commands ───────────────────────────────────────────────────
+    this.addCommand({ id: 'ux-brain-breathing-demo', name: 'UX: Brain Breathing demo (cadence sweep 1.0→0.2→1.0)',
+      callback: () => {
+        try {
+          const set = (v) => document.body.style.setProperty('--ccc-brain-cadence', String(v));
+          const steps = [1.0, 0.8, 0.6, 0.4, 0.2, 0.4, 0.6, 0.8, 1.0];
+          new Notice('Brain Breathing: cadence sweep starting (6s)', 3000);
+          steps.forEach((v, i) => setTimeout(() => { set(v); if (i === steps.length - 1) new Notice('Brain Breathing: cadence back to 1.0', 2000); }, i * 750));
+        } catch (e) { new Notice('Brain Breathing demo error: ' + e.message, 5000); }
+      }
+    });
+    this.addCommand({ id: 'ux-input-buffer-demo', name: 'UX: Input Buffer Queue demo (fake-speaking 5s)',
+      callback: async () => {
+        try {
+          if (!this.orb.visible) await this.orb.show();
+          const wrap = this.orb.el;
+          if (!wrap) { new Notice('IBQ demo: orb not visible', 3000); return; }
+          wrap.classList.add('ccc-orb-speaking');
+          this.orb.orb && this.orb.setState('speaking');
+          new Notice('IBQ demo: orb is speaking — type something! (5s)', 5000);
+          setTimeout(() => {
+            try {
+              wrap.classList.remove('ccc-orb-speaking');
+              this.orb.orb && this.orb.setState('idle');
+              // drain pills if any were typed
+              if (this.orb._ibqDrain) this.orb._ibqDrain();
+              new Notice('IBQ demo: speaking ended — buffered text would be injected into next ask()', 4000);
+            } catch (_) {}
+          }, 5000);
+        } catch (e) { new Notice('IBQ demo error: ' + e.message, 5000); }
+      }
+    });
+    this.addCommand({ id: 'ux-cache-hit-skip-demo', name: 'UX: Cache-Hit Skip demo (flash + strikethrough)',
+      callback: async () => {
+        try {
+          if (!this.orb.visible) await this.orb.show();
+          this.orb._ensureStepper && this.orb._ensureStepper();
+          this.orb._setStage && this.orb._setStage('thinking'); // show stepper
+          await new Promise(r => setTimeout(r, 400));
+          this.orb._skipStepperCells && this.orb._skipStepperCells(['transcribing', 'recalling']);
+          new Notice('Cache-Hit Skip: strikethrough + flash fired', 2500);
+          setTimeout(() => { try { this.orb._setStage && this.orb._setStage(null); } catch (_) {} }, 2000);
+        } catch (e) { new Notice('Cache-Hit Skip demo error: ' + e.message, 5000); }
+      }
+    });
+    this.addCommand({ id: 'ux-route-breadcrumbs-demo', name: 'UX: Route Breadcrumbs demo (3 recent vault files)',
+      callback: () => {
+        try {
+          const rb = this.routeBreadcrumbs;
+          if (!rb) { new Notice('Breadcrumbs: routeBreadcrumbs not initialised', 3000); return; }
+          // use 3 real recent vault files; fall back to labeled demo paths
+          rb._reads = [];
+          const recent = this.app.workspace.getLastOpenFiles ? this.app.workspace.getLastOpenFiles().slice(0, 3) : [];
+          if (recent.length >= 3) {
+            for (const f of recent) rb.addRead({ file_path: f });
+          } else {
+            rb.addRead({ file_path: '02_Areas/Pipeline.md' });
+            rb.addRead({ file_path: '_brain_api/bid/_open.json' });
+            rb.addRead({ file_path: '_agent_state/_registry.json' });
+          }
+          rb.render();
+          new Notice('Route Breadcrumbs: chips pinned to explorer rows (90s fade)', 3000);
+        } catch (e) { new Notice('Route Breadcrumbs demo error: ' + e.message, 5000); }
+      }
+    });
+    // ── g2tissue demo commands ────────────────────────────────────────────────
+    this.addCommand({ id: 'ux-pheromone-demo', name: 'UX: Pheromone Trails demo (force scan + paint)',
+      callback: async () => {
+        try {
+          const pl = this.pheromoneLayer;
+          if (!pl) { new Notice('PheromoneLayer not initialised', 3000); return; }
+          pl._lastScan = 0; // force re-scan
+          await pl._scan();
+          new Notice(`Pheromone: ${pl._scent.size} folders scented — check file explorer for amber glow`, 4000);
+        } catch (e) { new Notice('Pheromone demo error: ' + (e && e.message || String(e)), 5000); }
+      }
+    });
+    this.addCommand({ id: 'ux-evaporation-tabs-demo', name: 'UX: Evaporation Tabs demo (force tick)',
+      callback: async () => {
+        try {
+          const et = this.evaporationTabs;
+          if (!et) { new Notice('EvaporationTabs not initialised', 3000); return; }
+          await et._tick();
+          new Notice('Evaporation Tabs: underlines refreshed — open Command Center to see fill levels', 4000);
+        } catch (e) { new Notice('EvaporationTabs demo error: ' + (e && e.message || String(e)), 5000); }
+      }
+    });
+    this.addCommand({ id: 'ux-pipeline-tide-demo', name: 'UX: Pipeline Tide demo (open Sales tab)',
+      callback: async () => {
+        try {
+          // open or focus the Command Center on the sales tab
+          const leaves = this.app.workspace.getLeavesOfType('claude-command-center');
+          if (leaves.length) {
+            this.app.workspace.revealLeaf(leaves[0]);
+            if (leaves[0].view && leaves[0].view._enqueueRender) {
+              leaves[0].view._enqueueRender(() => leaves[0].view._switchTab('sales'));
+            }
+          } else {
+            new Notice('Pipeline Tide: open the Command Center dashboard then click Sales tab', 4000);
+          }
+        } catch (e) { new Notice('Pipeline Tide demo error: ' + (e && e.message || String(e)), 5000); }
+      }
+    });
+    this.addCommand({ id: 'ux-gravity-mass-demo', name: 'UX: Gravity Mass demo (pulse graph masses on/off)',
+      callback: () => {
+        try {
+          const gm = this.gravityMass;
+          if (!gm) { new Notice('GravityMass not initialised', 3000); return; }
+          gm.pulseDemo();
+        } catch (e) { new Notice('GravityMass demo error: ' + (e && e.message || String(e)), 5000); }
+      }
+    });
+    this.addCommand({ id: 'ux-sediment-strata-demo', name: 'UX: Sediment Strata demo (recompute on active note)',
+      callback: async () => {
+        try {
+          const ss = this.sedimentStrata;
+          if (!ss) { new Notice('SedimentStrata not initialised', 3000); return; }
+          await ss._attach();
+          const bands = ss._strata ? ss._strata.querySelectorAll('.ccc-ux-strata-seg').length : 0;
+          if (bands) new Notice(`Sediment Strata: ${bands} agent band(s) drawn at top of editor`, 4000);
+          else new Notice('Sediment Strata: no agent writes reference this note (no bands)', 4000);
+        } catch (e) { new Notice('Sediment Strata demo error: ' + (e && e.message || String(e)), 5000); }
+      }
+    });
+    // ── end g2tissue demo commands ────────────────────────────────────────────
+    // ── g3editor demo commands ────────────────────────────────────────────────
+    this.addCommand({
+      id: 'ux-promise-fault-lines-demo',
+      name: 'UX: Promise Fault Lines demo (force reattach on active note)',
+      callback: async () => {
+        try {
+          const pfl = this.promiseFaultLines;
+          if (!pfl) { new Notice('PromiseFaultLines not initialised', 3000); return; }
+          // if no real data matches, synthesise one crack for visibility
+          const f = this.app.workspace.getActiveFile();
+          if (!f) { new Notice('Promise Fault Lines: open a markdown note first', 3000); return; }
+          await pfl._attach();
+          const drawn = pfl._cracks.length;
+          if (drawn) {
+            new Notice(`Promise Fault Lines: ${drawn} crack(s) drawn on matched headings`, 4000);
+          } else {
+            // synthetic: inject one demo crack directly
+            const leaf = this.app.workspace.getMostRecentLeaf();
+            const view = leaf && leaf.view;
+            if (view && view.getViewType() === 'markdown') {
+              const host = view.containerEl;
+              const heading = host.querySelector('h1,h2,h3,.HyperMD-header,.cm-header');
+              if (heading) {
+                const synth = { text: '[DEMO] Promised to follow up on Q3 proposal', due_date_inferred: '2026-06-15', meeting_ref: 'synthetic-demo', status: 'pending', days_overdue: 3 };
+                pfl._drawCrack(host, heading, synth);
+                new Notice('Promise Fault Lines: no real matches — showing synthetic demo crack', 4000);
+              } else {
+                new Notice('Promise Fault Lines: no matching promises and no headings found', 4000);
+              }
+            } else {
+              new Notice('Promise Fault Lines: no markdown leaf open', 4000);
+            }
+          }
+        } catch (e) { new Notice('Promise Fault Lines demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    this.addCommand({
+      id: 'ux-contradiction-scar-demo',
+      name: 'UX: Contradiction Scar demo (force tick)',
+      callback: async () => {
+        try {
+          const cs = this.contradictionScar;
+          if (!cs) { new Notice('ContradictionScar not initialised', 3000); return; }
+          await cs._tick();
+          const scarCount = cs._scars.size;
+          if (scarCount) {
+            new Notice(`Contradiction Scar: ${scarCount} tab(s) scarred`, 4000);
+          } else {
+            // synthetic: inject a scar on the active tab header
+            const leaf = this.app.workspace.getMostRecentLeaf();
+            const tabEl = leaf && (leaf.tabHeaderEl || (leaf.containerEl && leaf.containerEl.closest('.workspace-tab-header')));
+            if (tabEl) {
+              cs._addScar(tabEl);
+              new Notice('Contradiction Scar: no real matches — showing synthetic demo scar on active tab', 4000);
+            } else {
+              new Notice('Contradiction Scar: no real matches and no tab header found', 4000);
+            }
+          }
+        } catch (e) { new Notice('Contradiction Scar demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    this.addCommand({
+      id: 'ux-meeting-seismograph-demo',
+      name: 'UX: Meeting Seismograph demo (render visible Meetings/ rows)',
+      callback: async () => {
+        try {
+          const ms = this.meetingSeismograph;
+          if (!ms) { new Notice('MeetingSeismograph not initialised', 3000); return; }
+          // force-render all currently visible Meetings/ rows ignoring session cap
+          const rows = document.querySelectorAll('.nav-file-title[data-path]');
+          let rendered = 0;
+          for (const row of rows) {
+            const p = row.getAttribute('data-path') || '';
+            if (!p.startsWith('Meetings/')) continue;
+            if (row.querySelector('.ccc-ux-seismo')) { rendered++; continue; }
+            if (ms._sessionCount < 20) {
+              await ms._renderRow(row);
+              rendered++;
+            }
+          }
+          if (rendered) {
+            new Notice(`Meeting Seismograph: ${rendered} row(s) rendered`, 4000);
+          } else {
+            new Notice('Meeting Seismograph: no Meetings/ rows visible in file explorer (expand the folder)', 4000);
+          }
+        } catch (e) { new Notice('Meeting Seismograph demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    // ── end g3editor demo commands ────────────────────────────────────────────
+    // ── end g1hud demo commands ───────────────────────────────────────────────
+
+    // ── g4fleet demo commands ─────────────────────────────────────────────────
+    this.addCommand({
+      id: 'ux-trust-patina-demo',
+      name: 'UX: Trust Patina demo (open Fleet tab → patina card)',
+      callback: async () => {
+        try {
+          // Switch to the Fleet tab so the patina card is visible
+          const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE);
+          if (!leaves.length) { new Notice('Open the Command Center first', 3000); return; }
+          const view = leaves[0].view;
+          if (view && view._enqueueRender) {
+            await this.app.workspace.revealLeaf(leaves[0]);
+            await view._enqueueRender(() => view._switchTab('fleet'));
+            new Notice('Trust Patina: Fleet tab open — patina card at the bottom with reputation tiers', 5000);
+          }
+        } catch (e) { new Notice('Trust Patina demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    this.addCommand({
+      id: 'ux-agent-breath-demo',
+      name: 'UX: Agent Breath demo (flash all glyphs inhale)',
+      callback: async () => {
+        try {
+          const ab = this.agentBreath;
+          if (!ab || !ab._el) { new Notice('Agent Breath: no status bar item (no active agents?)', 3000); return; }
+          // Force an inhale pulse on all visible glyphs
+          const glyphs = ab._el.querySelectorAll('.ccc-breath-glyph');
+          if (!glyphs.length) { new Notice('Agent Breath: no glyphs rendered yet — check status bar', 3000); return; }
+          glyphs.forEach(g => {
+            g.classList.remove('ccc-breath-inhale');
+            void g.offsetWidth; // reflow to restart animation
+            g.classList.add('ccc-breath-inhale');
+            setTimeout(() => { try { g.classList.remove('ccc-breath-inhale'); } catch (_) {} }, 1200);
+          });
+          new Notice(`Agent Breath: ${glyphs.length} glyph(s) inhaling in status bar`, 3000);
+        } catch (e) { new Notice('Agent Breath demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    this.addCommand({
+      id: 'ux-spend-bloodstream-demo',
+      name: 'UX: Spend Bloodstream demo (flash thick red bar)',
+      callback: async () => {
+        try {
+          const bs = this.spendBloodstream;
+          if (!bs || !bs._el) { new Notice('Spend Bloodstream: bar not attached (open Command Center first)', 3000); return; }
+          // Temporarily force a visual demo: thick red + fast pulse, then restore
+          const el = bs._el;
+          const origH = el.style.height, origBg = el.style.background, origDur = el.style.getPropertyValue('--ccc-bs-dur');
+          el.style.height = '6px';
+          el.style.background = 'hsl(0,85%,42%)';
+          el.style.setProperty('--ccc-bs-dur', '0.8s');
+          el.classList.add('ccc-bloodstream-crit');
+          new Notice('Spend Bloodstream demo: full budget · fast pulse · (restores in 4s)', 4000);
+          setTimeout(() => {
+            try {
+              el.style.height = origH; el.style.background = origBg;
+              el.style.setProperty('--ccc-bs-dur', origDur || '8s');
+              el.classList.remove('ccc-bloodstream-crit');
+              bs._update();
+            } catch (_) {}
+          }, 4000);
+        } catch (e) { new Notice('Spend Bloodstream demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    this.addCommand({
+      id: 'ux-metabolism-tray-demo',
+      name: 'UX: Metabolism Tray demo (show pulse interval)',
+      callback: async () => {
+        try {
+          const mt = this.metabolismTray;
+          if (!mt) { new Notice('MetabolismTray not initialised', 3000); return; }
+          const trayAvail = mt.isTrayAvailable();
+          const meanMs = mt._lastMeanMs;
+          const mode = trayAvail ? 'Electron Tray available' : 'fallback status-bar dot (Electron Tray unavailable)';
+          const interval = meanMs != null ? `${(meanMs / 1000).toFixed(1)}s` : 'not yet computed';
+          new Notice(`Metabolism Tray: ${mode} · mean write-interval ${interval}`, 6000);
+          // If fallback dot, animate a fast pulse for demo
+          if (!trayAvail && mt._sbEl) {
+            const el = mt._sbEl;
+            el.style.setProperty('--ccc-met-dur', '0.5s');
+            setTimeout(() => {
+              try { el.style.setProperty('--ccc-met-dur', ((meanMs || 8000) / 1000).toFixed(2) + 's'); } catch (_) {}
+            }, 3000);
+          }
+        } catch (e) { new Notice('Metabolism Tray demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    // ── end g4fleet demo commands ─────────────────────────────────────────────
+
+    // ── g5somatic demo commands ───────────────────────────────────────────────
+    this.addCommand({
+      id: 'ux-contradiction-binaural-demo',
+      name: 'UX: Contradiction Binaural demo (fire 220/228Hz beat)',
+      callback: () => {
+        try {
+          const cb = this.contradictionBinaural;
+          if (!cb) { new Notice('ContradictionBinaural not initialised', 3000); return; }
+          // Guard: not while orb speaking
+          if (document.querySelector('.ccc-orb-speaking')) { new Notice('Binaural skipped — orb is speaking', 3000); return; }
+          cb._chime();
+          new Notice('Contradiction Binaural: 220/228Hz binaural beat fired (220ms, gain 0.04)', 4000);
+        } catch (e) { new Notice('Contradiction Binaural demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    this.addCommand({
+      id: 'ux-promise-haptic-demo',
+      name: 'UX: Promise Haptic demo (notification + tick)',
+      callback: () => {
+        try {
+          const ph = this.promiseHaptic;
+          if (!ph) { new Notice('PromiseHaptic not initialised', 3000); return; }
+          // Use real due data if available, else synthetic
+          let text = 'DEMO: A promise is due now';
+          try {
+            const fs = require('fs'), path = require('path');
+            const base = this.app.vault.adapter.basePath;
+            const data = JSON.parse(fs.readFileSync(path.join(base, '_brain_api', 'promises', 'summary.json'), 'utf8'));
+            const items = [...(data.due_48h || []), ...(data.overdue_to_owner || [])];
+            if (items.length) text = items[0].text || text;
+          } catch (_) {}
+          ph._notify(text.slice(0, 80));
+          ph._tick();
+          new Notice('Promise Haptic: notification + 80ms tick fired\nCAVEAT: true Taptic needs native helper; see PromiseHaptic._hapticHook()', 6000);
+        } catch (e) { new Notice('Promise Haptic demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    this.addCommand({
+      id: 'ux-dock-badge-friction-demo',
+      name: 'UX: Dock Badge Friction demo (set badge to 1)',
+      callback: () => {
+        try {
+          const db = this.dockBadgeFriction;
+          if (!db) { new Notice('DockBadgeFriction not initialised', 3000); return; }
+          // Force a synthetic badge of 1
+          db._frictionPaths.add('Meetings/_demo-friction.md');
+          db._updateBadge();
+          new Notice('Dock Badge Friction: badge set to 1 (dock + status-bar chip)\nCAVEAT: macOS only for dock; chip always visible as fallback', 5000);
+          // Auto-clear after 8s
+          setTimeout(() => {
+            try { db._frictionPaths.delete('Meetings/_demo-friction.md'); db._updateBadge(); } catch (_) {}
+          }, 8000);
+        } catch (e) { new Notice('Dock Badge Friction demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    // Fleet Wallpaper sync is the primary command (also acts as demo)
+    this.addCommand({
+      id: 'ux-fleet-wallpaper-demo',
+      name: 'UX: fleet wallpaper sync',
+      callback: async () => {
+        try {
+          const fw = this.fleetWallpaper;
+          if (!fw) { new Notice('FleetWallpaper not initialised', 3000); return; }
+          await fw.sync(true);
+        } catch (e) { new Notice('Fleet Wallpaper demo error: ' + (e && e.message || String(e)), 5000); }
+      },
+    });
+    // ── end g5somatic demo commands ───────────────────────────────────────────
+
     this.addCommand({ id: 'jarvis-ask', name: 'Ultron: ask (Claude speaks the answer)',
       callback: async () => {
         if (!this.orb.visible) await this.orb.show();
@@ -11055,6 +13672,11 @@ class CommandCenterPlugin extends Plugin {
     this.settings.roi = Object.assign(
       { hourlyRate: 100, minPer1kOutput: 2.5, minPerSession: 10 },
       this.settings.roi || {}
+    );
+    // g5somatic defaults — all toggles default ON except wallpaperAuto (OFF)
+    this.settings.g5somatic = Object.assign(
+      { binauralEnabled: true, hapticEnabled: true, dockBadgeEnabled: true, wallpaperAuto: false },
+      this.settings.g5somatic || {}
     );
   }
 
