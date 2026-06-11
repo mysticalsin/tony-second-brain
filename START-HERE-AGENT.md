@@ -40,6 +40,9 @@ Read `specs/04-feature-catalog.md`. Build in the catalog's dependency order, but
 ### Phase 7 — Pipelines + self-test command
 Read `specs/05-data-pipelines.md`. The `_brain_api/` JSON endpoints for whatever agents they run, the refresh loop (cron/launchd/Task Scheduler per OS), and ALWAYS the in-plugin **self-test command** from `verification/SELFTEST.md` §command — it's the immune system that keeps later edits honest.
 
+### Phase 8 — Agent loadout + multi-model relay
+Read `specs/07-skills-loadout.md` and `specs/08-relay-baton.md`. Install the agent-side skill stack (process discipline, Obsidian-correct writing, token discipline, graph-first lookup) and seed the user's domain skill library from their interview answers — including the confidentiality guard if anything they produce ever leaves their machine. Then create `_relay/` (baton, log, attack queue, archive) and wire the § Relay section into the entry file of every model CLI the user actually has (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, a `<MODEL>.md` for local models). **Adapt each entry file — never find/replace-clone them** (see the pitfall in spec 08). **Gate:** a second model (or a fresh session) picks up the baton cold and correctly states the current task, what's done, and the next step — from the file alone.
+
 ## Working style
 
 - Read the relevant spec FULLY before writing code for a phase. The specs encode failure modes as constraints; skimming reproduces the failures.

@@ -24,6 +24,8 @@ This is not a plugin you install. **It's a blueprint your AI agent builds — pe
 | 👻 **Phantom files** | Your project folders render ghost rows for the artifacts a successful project would have at this stage — click to materialize. |
 | 🩻 **Power tools** | MRI-mode document tomography, 24h Vault CCTV replay, git Time-Scrub cinema, agent Diagnostic Chamber (depose your AI agents in first person), win-theme Forge, meeting Loadout screen, Sparring Chamber (rehearse against a corpus-built counterpart). |
 | 🔧 **Machine layer** | A `_brain_api/` of pre-computed JSON endpoints your agents query instead of crawling files, an hourly refresh loop, honest cost tracking with transcript dedupe, and a relay baton for multi-model handoffs. |
+| 🧰 **Agent skill loadout** | The coding-agent side of the system: process-discipline skills (superpowers), Obsidian-correct writing (obsidian-skills), token discipline (caveman + rtk, ~60–90% savings), knowledge-graph-first lookup (graphify), cross-model plan review, and a self-learning domain skill library with a mandatory confidentiality guard. |
+| 🪃 **Multi-model relay** | Claude, Codex, Gemini, and local models work as consecutive shifts of ONE worker: a `_relay/` baton carries live state, decisions, and next steps across handoffs — session limits and model switches stop being resets. |
 
 Everything binds to **real data in your vault**. The #1 design law: *no theater* — if a pixel moves, it's because your data moved.
 
@@ -75,6 +77,8 @@ specs/
   04-feature-catalog.md    ← all 20 power features, each fully spec'd
   05-data-pipelines.md     ← _brain_api endpoints, refresh loop, honest cost tracking
   06-hard-won-lessons.md   ← the gotchas (read this even if you build nothing)
+  07-skills-loadout.md     ← the agent-side skill stack (caveman, graphify, superpowers…)
+  08-relay-baton.md        ← the cross-model baton protocol (one worker, many models)
 verification/SELFTEST.md   ← behavioral checks per phase — "loads clean" is not done
 LICENSE                    ← MIT, with attribution request
 ```
