@@ -81,6 +81,7 @@ specs/
   06-hard-won-lessons.md   ← the gotchas (read this even if you build nothing)
   07-skills-loadout.md     ← the agent-side skill stack (caveman, graphify, superpowers…)
   08-relay-baton.md        ← the cross-model baton protocol (one worker, many models)
+  09-trust-and-tape.md     ← promise ledger, contradiction detector, deal microstructure tape
 verification/SELFTEST.md   ← behavioral checks per phase — "loads clean" is not done
 LICENSE                    ← MIT, with attribution request
 ```

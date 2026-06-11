@@ -43,6 +43,9 @@ Read `specs/05-data-pipelines.md`. The `_brain_api/` JSON endpoints for whatever
 ### Phase 8 — Agent loadout + multi-model relay
 Read `specs/07-skills-loadout.md` and `specs/08-relay-baton.md`. Install the agent-side skill stack (process discipline, Obsidian-correct writing, token discipline, graph-first lookup) and seed the user's domain skill library from their interview answers — including the confidentiality guard if anything they produce ever leaves their machine. Then create `_relay/` (baton, log, attack queue, archive) and wire the § Relay section into the entry file of every model CLI the user actually has (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, a `<MODEL>.md` for local models). **Adapt each entry file — never find/replace-clone them** (see the pitfall in spec 08). **Gate:** a second model (or a fresh session) picks up the baton cold and correctly states the current task, what's done, and the next step — from the file alone.
 
+### Phase 9 — Trust layer (optional, after real meeting data accumulates)
+Read `specs/09-trust-and-tape.md`. Promise ledger, cross-agent contradiction detector, deal tape — build only once the user has real meeting notes flowing (they bind to that data). **Gate:** each tool's behavioral fixture tests pass AND one real-data run produces output the user confirms matches reality.
+
 ## Working style
 
 - Read the relevant spec FULLY before writing code for a phase. The specs encode failure modes as constraints; skimming reproduces the failures.
