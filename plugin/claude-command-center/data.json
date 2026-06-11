@@ -1,0 +1,82 @@
+{
+  "actions": [
+    {
+      "id": "brain-status",
+      "emoji": "\ud83e\udde0",
+      "label": "Brain Status",
+      "command": "/brain-status",
+      "prompt": false
+    },
+    {
+      "id": "brain-refresh",
+      "emoji": "\ud83d\udd04",
+      "label": "Brain Refresh",
+      "command": "bash 99_Meta/brain-refresh.sh",
+      "prompt": false
+    },
+    {
+      "id": "dust-resolve",
+      "emoji": "\ud83d\udce5",
+      "label": "Dust Resolve",
+      "command": "/dust-resolve",
+      "prompt": false
+    },
+    {
+      "id": "recall",
+      "emoji": "\ud83d\udd0d",
+      "label": "Recall",
+      "command": "/recall \"{input}\"",
+      "prompt": true,
+      "placeholder": "search query"
+    },
+    {
+      "id": "ingest-meeting",
+      "emoji": "\ud83c\udf99",
+      "label": "Ingest Meeting",
+      "command": "/ingest-meeting",
+      "prompt": false
+    },
+    {
+      "id": "think-build",
+      "emoji": "\ud83c\udfd7",
+      "label": "Think-Build",
+      "command": "/think-build {input}",
+      "prompt": true,
+      "placeholder": "goal"
+    },
+    {
+      "id": "morning-brief",
+      "emoji": "\ud83d\udccb",
+      "label": "Morning Brief",
+      "prompt": false,
+      "command": "__DIGEST_NOW__"
+    },
+    {
+      "id": "jarvis",
+      "emoji": "\ud83d\udd2e",
+      "label": "Ultron Orb",
+      "prompt": false,
+      "command": "__ORB_TOGGLE__"
+    },
+    {
+      "id": "teams-sync",
+      "emoji": "\ud83d\udce5",
+      "label": "Teams Sync",
+      "prompt": false,
+      "command": "/teams-sync"
+    }
+  ],
+  "activeTab": "overview",
+  "autoAssemble": true,
+  "autoMorningBrief": true,
+  "roi": {
+    "hourlyRate": 100,
+    "minPer1kOutput": 2.5,
+    "minPerSession": 10
+  },
+  "askHistory": [],
+  "voiceHistory": [],
+  "voice": {},
+  "usage": {},
+  "_mon": {}
+}

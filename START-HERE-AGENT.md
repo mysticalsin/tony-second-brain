@@ -18,11 +18,11 @@ You are an agentic coding assistant (Claude Code, Codex CLI, or equivalent) and 
 ### Phase 0 — Interview (always first)
 Run `interview/INTERVIEW.md`. Ask the questions conversationally, in 2–3 batches, not 14 at once. Record answers to `BUILD-PROFILE.md` in the user's vault — every later phase reads it. Where the user is vague, propose a sensible default and mark it `(default — revisit)`.
 
-### Phase 1 — Vault skeleton
-Read `specs/00-architecture.md`. Create the vault layers mapped to the user's interview answers (their PARA-equivalent, their machine layer). Generate 2–3 *seed notes per area from their actual answers* so dashboards have something real to show on day one. Initialize git. **Gate:** user opens vault, structure makes sense to them.
+### Phase 1 — Vault skeleton (copy, don't reinvent)
+Copy `starter/vault-skeleton/` into the user's vault VERBATIM — same folder names, same machine layer, same `_relay/` seed. This is non-negotiable: a shared skeleton is what keeps every build of this blueprint compatible with the specs, the plugin, and other people's fixes. THEN personalize CONTENT: read `specs/00-architecture.md`, generate 2–3 seed notes per area from the interview answers so dashboards have something real to show on day one. Initialize git. **Gate:** user opens vault, structure matches the skeleton, seed notes are theirs.
 
-### Phase 2 — Plugin core + dashboard
-Read `specs/01-plugin-core.md`. Build the Obsidian plugin skeleton (manifest, single main.js or src/+esbuild — prefer esbuild if user has node; single-file is acceptable to start), the dashboard view with tabs, the memoized data layer, the refresh discipline, the hot-reload dev loop. **Gate:** dashboard renders their real seed data; SELFTEST phase-2 checks pass.
+### Phase 2 — Plugin install (shipped, not rebuilt)
+Copy `plugin/claude-command-center/` into `<vault>/.obsidian/plugins/claude-command-center/` and have the user enable it plus the community plugins listed in the skeleton's `.obsidian/community-plugins.json` (hot-reload, Local REST API, Dataview). The dashboard, Ultron orb host, synapse layers, and all power features arrive working — identical to the original build. Read `specs/01-plugin-core.md` to UNDERSTAND the architecture (you will need it for personalization and any modification), not to rewrite it. **Gate:** dashboard opens and renders the Phase-1 seed data; SELFTEST phase-2 checks pass.
 
 ### Phase 3 — Cost tracking (if they use Claude Code/Codex)
 Read `specs/05-data-pipelines.md` §cost. Per-model pricing table + transcript parsing **with message-id dedupe** (see lessons file — skipping dedupe inflates 2–3×). **Gate:** spend card matches a hand-computed sample day.

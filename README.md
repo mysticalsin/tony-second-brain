@@ -31,7 +31,7 @@ Everything binds to **real data in your vault**. The #1 design law: *no theater*
 
 ## How it works (the plug-and-play part)
 
-You don't clone-and-configure. You hand this repo to your coding agent:
+Two layers: the **turnkey core** (`starter/` vault skeleton + `plugin/` — the real, sanitized plugin, installed verbatim so YOUR dashboard and Ultron look exactly like mine) and the **agent-built personalization** (everything else, driven by the specs). You hand this repo to your coding agent:
 
 ```bash
 git clone https://github.com/mysticalsin/tony-second-brain
@@ -68,6 +68,8 @@ The architecture decisions, the perf rules, and especially the failure modes in 
 
 ```
 START-HERE-AGENT.md        ← give this to your agent (the master build prompt)
+starter/vault-skeleton/    ← the exact folder structure — copied verbatim in Phase 1
+plugin/claude-command-center/ ← the REAL plugin (sanitized) — installed verbatim in Phase 2
 interview/INTERVIEW.md     ← the personalization questionnaire your agent runs
 specs/
   00-architecture.md       ← vault layers, design laws, machine-readable surfaces

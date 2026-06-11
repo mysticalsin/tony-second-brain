@@ -1,0 +1,1649 @@
+/* Claude Command Center — Amaris Brand Styles
+   All rules scoped under .ccc-root
+   Primary Purple: #6600AE | Bright Purple: #7F00DA | Accent Yellow: #F8F060
+   Dark BG: #1A0033 | Font: Calibri / Carlito
+*/
+
+.ccc-root {
+  background: linear-gradient(160deg, #1A0033 0%, #0d001a 100%);
+  min-height: 100%;
+  padding: 24px;
+  font-family: Calibri, Carlito, -apple-system, sans-serif;
+  color: #e8defa;
+  box-sizing: border-box;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+.ccc-root .ccc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ccc-root .ccc-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ccc-root .ccc-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #e8defa;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.ccc-root .ccc-subtitle {
+  font-size: 12px;
+  color: #9b86b8;
+  margin: 0;
+}
+
+.ccc-root .ccc-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ccc-root .ccc-last-refresh {
+  font-size: 11px;
+  color: #9b86b8;
+}
+
+.ccc-root .ccc-refresh-btn {
+  background: rgba(127, 0, 218, 0.2);
+  border: 1px solid rgba(127, 0, 218, 0.45);
+  color: #b894e0;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms, border-color 150ms;
+}
+
+.ccc-root .ccc-refresh-btn:hover {
+  background: rgba(127, 0, 218, 0.35);
+  border-color: #7F00DA;
+}
+
+/* ── Tab strip ──────────────────────────────────────────────── */
+
+.ccc-root .ccc-tab-strip {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.ccc-root .ccc-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #b894e0;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms, color 150ms, border-color 150ms;
+}
+
+.ccc-root .ccc-tab-btn:hover {
+  background: rgba(127, 0, 218, 0.2);
+  border-color: rgba(127, 0, 218, 0.35);
+}
+
+.ccc-root .ccc-tab-btn.ccc-tab-active {
+  background: #6600AE;
+  color: #ffffff;
+  border-color: #6600AE;
+}
+
+/* ── Grid ───────────────────────────────────────────────────── */
+
+.ccc-root .ccc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+
+.ccc-root .ccc-card {
+  background: rgba(102, 0, 174, 0.12);
+  border: 1px solid rgba(127, 0, 218, 0.35);
+  border-radius: 14px;
+  padding: 18px;
+  transition: transform 150ms, border-color 150ms, box-shadow 150ms;
+  cursor: default;
+}
+
+.ccc-root .ccc-card:hover {
+  transform: translateY(-2px);
+  border-color: #7F00DA;
+  box-shadow: 0 4px 24px rgba(127, 0, 218, 0.25);
+}
+
+.ccc-root .ccc-card-hero {
+  /* hero variant — no additional overrides needed */
+}
+
+.ccc-root .ccc-card-error {
+  border-color: rgba(224, 68, 62, 0.45);
+}
+
+.ccc-root .ccc-placeholder-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  grid-column: 1 / -1;
+}
+
+.ccc-root .ccc-placeholder-text {
+  color: #9b86b8;
+  font-style: italic;
+  font-size: 13px;
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+/* ── Eyebrow ────────────────────────────────────────────────── */
+
+.ccc-root .ccc-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #b894e0;
+  margin: 0 0 12px;
+  padding: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(127,0,218,.30);
+}
+/* marker dot before each section title, tinted by the section accent */
+.ccc-root .ccc-eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* ── Giant stat ─────────────────────────────────────────────── */
+
+.ccc-root .ccc-big-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ccc-root .ccc-giant-stat {
+  font-size: 42px;
+  font-weight: 800;
+  color: #F8F060;
+  line-height: 1;
+}
+
+.ccc-root .ccc-caption {
+  font-size: 13px;
+  color: #9b86b8;
+}
+
+/* ── Substats ───────────────────────────────────────────────── */
+
+.ccc-root .ccc-substats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.ccc-root .ccc-substat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ccc-root .ccc-substat-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e8defa;
+}
+
+.ccc-root .ccc-substat-lbl {
+  font-size: 10px;
+  color: #9b86b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Sparkline ──────────────────────────────────────────────── */
+
+.ccc-root .ccc-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 40px;
+  margin-top: 8px;
+}
+
+.ccc-root .ccc-spark-bar {
+  flex: 1;
+  background: #7F00DA;
+  border-radius: 3px 3px 0 0;
+  min-height: 3px;
+  transition: height 300ms ease;
+}
+
+.ccc-root .ccc-spark-bar.ccc-spark-today {
+  background: #F8F060;
+}
+
+/* ── List rows ──────────────────────────────────────────────── */
+
+.ccc-root .ccc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 12px;
+}
+
+.ccc-root .ccc-list-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 6px;
+  border-top: 1px solid rgba(127, 0, 218, 0.18);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 120ms;
+  flex-wrap: wrap;
+}
+
+.ccc-root .ccc-list-row:hover {
+  background: rgba(127, 0, 218, 0.12);
+}
+
+.ccc-root .ccc-list-primary {
+  flex: 1;
+  font-size: 13px;
+  color: #e8defa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.ccc-root .ccc-list-secondary {
+  font-size: 11px;
+  color: #9b86b8;
+  white-space: nowrap;
+}
+
+.ccc-root .ccc-list-meta {
+  font-size: 11px;
+  color: #9b86b8;
+  white-space: nowrap;
+}
+
+/* ── Fleet dot ──────────────────────────────────────────────── */
+
+.ccc-root .ccc-fleet-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ccc-root .ccc-fleet-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── Badges ─────────────────────────────────────────────────── */
+
+.ccc-root .ccc-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(127, 0, 218, 0.2);
+  color: #b894e0;
+  white-space: nowrap;
+}
+
+.ccc-root .ccc-badge-danger {
+  background: rgba(224, 68, 62, 0.18);
+  color: #E0443E;
+}
+
+/* ── Pills ──────────────────────────────────────────────────── */
+
+.ccc-root .ccc-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(248, 240, 96, 0.15);
+  color: #F8F060;
+  white-space: nowrap;
+}
+
+/* ── Empty state ────────────────────────────────────────────── */
+
+.ccc-root .ccc-empty {
+  font-size: 12px;
+  color: #9b86b8;
+  font-style: italic;
+  margin: 12px 0 0;
+  text-align: center;
+}
+
+/* ── Error message ──────────────────────────────────────────── */
+
+.ccc-root .ccc-error-msg {
+  font-size: 12px;
+  color: #E0443E;
+  margin: 6px 0 0;
+}
+
+/* ── Skill-launcher actions strip ───────────────────────────── */
+
+.ccc-root .ccc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ccc-root .ccc-action-btn {
+  background: rgba(248, 240, 96, 0.1);
+  border: 1px solid rgba(248, 240, 96, 0.4);
+  color: #F8F060;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 140ms, transform 120ms, box-shadow 140ms;
+}
+
+.ccc-root .ccc-action-btn:hover {
+  background: rgba(248, 240, 96, 0.22);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 10px rgba(248, 240, 96, 0.15);
+}
+
+.ccc-root .ccc-action-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Action prompt modal ─────────────────────────────────────── */
+
+/* Modal's contentEl natively carries modal-content; ccc-modal is added to contentEl */
+.modal-content.ccc-modal {
+  padding: 8px 4px;
+}
+
+.modal-content.ccc-modal .ccc-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: var(--text-normal);
+}
+
+.modal-content.ccc-modal .ccc-modal-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+  outline: none;
+}
+
+.modal-content.ccc-modal .ccc-modal-input:focus {
+  border-color: #7F00DA;
+  box-shadow: 0 0 0 2px rgba(127, 0, 218, 0.25);
+}
+
+.modal-content.ccc-modal .ccc-modal-run-btn {
+  background: #6600AE;
+  border: none;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 140ms;
+}
+
+.modal-content.ccc-modal .ccc-modal-run-btn:hover {
+  background: #7F00DA;
+}
+
+/* ── Skills Tab ─────────────────────────────────────────────── */
+
+.ccc-root .ccc-skills-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ccc-root .ccc-skills-stat-line {
+  font-size: 12px;
+  color: #9b86b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ccc-root .ccc-skills-stat-line strong {
+  color: #F8F060;
+  font-weight: 700;
+}
+
+.ccc-root .ccc-skills-reindex-btn {
+  flex-shrink: 0;
+}
+
+.ccc-root .ccc-skills-search {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(20, 0, 40, 0.7);
+  border: 1px solid rgba(127, 0, 218, 0.35);
+  border-radius: 8px;
+  color: #e8defa;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: Calibri, Carlito, -apple-system, sans-serif;
+  outline: none;
+  margin-bottom: 14px;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.ccc-root .ccc-skills-search::placeholder {
+  color: #5c4878;
+}
+
+.ccc-root .ccc-skills-search:focus {
+  border-color: rgba(127, 0, 218, 0.7);
+  box-shadow: 0 0 0 2px rgba(127, 0, 218, 0.18);
+}
+
+.ccc-root .ccc-skills-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Group headers */
+
+.ccc-root .ccc-skills-group {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(127, 0, 218, 0.18);
+}
+
+.ccc-root .ccc-skills-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: rgba(102, 0, 174, 0.1);
+  cursor: pointer;
+  user-select: none;
+  transition: background 120ms;
+}
+
+.ccc-root .ccc-skills-group-header:hover {
+  background: rgba(127, 0, 218, 0.2);
+}
+
+.ccc-root .ccc-skills-group-header.ccc-skills-group-open {
+  background: rgba(102, 0, 174, 0.18);
+  border-bottom: 1px solid rgba(127, 0, 218, 0.18);
+}
+
+.ccc-root .ccc-skills-chevron {
+  font-size: 11px;
+  color: #b894e0;
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.ccc-root .ccc-skills-group-name {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #b894e0;
+}
+
+.ccc-root .ccc-skills-group-count {
+  font-size: 11px;
+  color: #5c4878;
+  background: rgba(127, 0, 218, 0.12);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+/* Skill rows */
+
+.ccc-root .ccc-skills-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.ccc-root .ccc-skills-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-top: 1px solid rgba(127, 0, 218, 0.1);
+  transition: background 120ms;
+}
+
+.ccc-root .ccc-skills-row:hover {
+  background: rgba(127, 0, 218, 0.1);
+}
+
+.ccc-root .ccc-skills-row-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ccc-root .ccc-skills-row-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8defa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ccc-root .ccc-skills-row-desc {
+  font-size: 11px;
+  color: #9b86b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ccc-root .ccc-skills-row-btns {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* Run / Open ghost buttons */
+
+.ccc-root .ccc-skills-btn {
+  font-size: 11px;
+  font-family: Calibri, Carlito, -apple-system, sans-serif;
+  padding: 3px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+  white-space: nowrap;
+}
+
+.ccc-root .ccc-skills-btn-run {
+  background: rgba(248, 240, 96, 0.08);
+  border: 1px solid rgba(248, 240, 96, 0.35);
+  color: #F8F060;
+}
+
+.ccc-root .ccc-skills-btn-run:hover {
+  background: rgba(248, 240, 96, 0.2);
+  border-color: rgba(248, 240, 96, 0.6);
+}
+
+.ccc-root .ccc-skills-btn-open {
+  background: rgba(127, 0, 218, 0.1);
+  border: 1px solid rgba(127, 0, 218, 0.35);
+  color: #b894e0;
+}
+
+.ccc-root .ccc-skills-btn-open:hover {
+  background: rgba(127, 0, 218, 0.25);
+  border-color: #7F00DA;
+}
+
+/* ── Month pills (Meetings tab) ─────────────────────────────── */
+
+.ccc-root .ccc-month-pills {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.ccc-root .ccc-month-pill {
+  background: transparent;
+  border: 1px solid rgba(127, 0, 218, 0.35);
+  color: #b894e0;
+  padding: 4px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 140ms, color 140ms, border-color 140ms;
+}
+
+.ccc-root .ccc-month-pill:hover {
+  background: rgba(127, 0, 218, 0.2);
+  border-color: rgba(127, 0, 218, 0.55);
+}
+
+.ccc-root .ccc-month-pill.ccc-month-pill-active {
+  background: #6600AE;
+  color: #ffffff;
+  border-color: #6600AE;
+}
+
+/* ── Transcript badges ──────────────────────────────────────── */
+
+.ccc-root .ccc-badge-transcribed {
+  background: rgba(16, 163, 127, 0.18);
+  color: #10A37F;
+}
+
+.ccc-root .ccc-badge-pending {
+  background: rgba(158, 134, 50, 0.2);
+  color: #c8a830;
+}
+
+/* ── Cost pill (Fleet tab) ──────────────────────────────────── */
+
+.ccc-root .ccc-cost-pill {
+  /* inherits .ccc-pill yellow variant */
+}
+
+/* ── Tab footer link row ────────────────────────────────────── */
+
+.ccc-root .ccc-tab-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.ccc-root .ccc-footer-link {
+  background: transparent;
+  border: 1px solid rgba(127, 0, 218, 0.3);
+  color: #9b86b8;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 130ms, color 130ms, border-color 130ms;
+}
+
+.ccc-root .ccc-footer-link:hover {
+  background: rgba(127, 0, 218, 0.15);
+  color: #b894e0;
+  border-color: rgba(127, 0, 218, 0.5);
+}
+
+/* ── Section accents — distinct colour identity per card so sections read apart ── */
+.ccc-root .ccc-card { border-left-width: 3px; border-left-style: solid; border-left-color: rgba(127,0,218,.55); }
+
+.ccc-root .ccc-sec-spend    { border-left-color: #7F00DA; }
+.ccc-root .ccc-sec-meetings { border-left-color: #F8F060; }
+.ccc-root .ccc-sec-fleet    { border-left-color: #13A8A8; }
+.ccc-root .ccc-sec-pipeline { border-left-color: #E8930C; }
+.ccc-root .ccc-sec-important{ border-left-color: #E0443E; }
+.ccc-root .ccc-sec-coverage { border-left-color: #5AC8FA; }
+.ccc-root .ccc-sec-triage   { border-left-color: #FF9533; }
+.ccc-root .ccc-sec-skills   { border-left-color: #1FA45C; }
+
+/* eyebrow label takes the section colour */
+.ccc-root .ccc-sec-spend    .ccc-eyebrow { color: #b894e0; }
+.ccc-root .ccc-sec-meetings .ccc-eyebrow { color: #F8F060; }
+.ccc-root .ccc-sec-fleet    .ccc-eyebrow { color: #4fd6d6; }
+.ccc-root .ccc-sec-pipeline .ccc-eyebrow { color: #f0a83c; }
+.ccc-root .ccc-sec-important .ccc-eyebrow { color: #ef6f6a; }
+.ccc-root .ccc-sec-coverage .ccc-eyebrow { color: #5AC8FA; }
+.ccc-root .ccc-sec-triage   .ccc-eyebrow { color: #FF9533; }
+.ccc-root .ccc-sec-skills   .ccc-eyebrow { color: #3ec77e; }
+
+/* subtle top-tint per section + hover glow in the section colour */
+.ccc-root .ccc-sec-meetings { background: linear-gradient(180deg, rgba(248,240,96,.07), rgba(102,0,174,.10)); }
+.ccc-root .ccc-sec-fleet    { background: linear-gradient(180deg, rgba(19,168,168,.10), rgba(102,0,174,.10)); }
+.ccc-root .ccc-sec-pipeline { background: linear-gradient(180deg, rgba(232,147,12,.10), rgba(102,0,174,.10)); }
+.ccc-root .ccc-sec-important{ background: linear-gradient(180deg, rgba(224,68,62,.10), rgba(102,0,174,.10)); }
+.ccc-root .ccc-sec-coverage { background: linear-gradient(180deg, rgba(90,200,250,.10), rgba(102,0,174,.10)); }
+.ccc-root .ccc-sec-triage   { background: linear-gradient(180deg, rgba(255,149,51,.10), rgba(102,0,174,.10)); }
+
+.ccc-root .ccc-sec-meetings:hover { border-color: #F8F060; box-shadow: 0 4px 24px rgba(248,240,96,.22); }
+.ccc-root .ccc-sec-fleet:hover    { border-color: #13A8A8; box-shadow: 0 4px 24px rgba(19,168,168,.28); }
+.ccc-root .ccc-sec-pipeline:hover { border-color: #E8930C; box-shadow: 0 4px 24px rgba(232,147,12,.28); }
+.ccc-root .ccc-sec-important:hover{ border-color: #E0443E; box-shadow: 0 4px 24px rgba(224,68,62,.28); }
+.ccc-root .ccc-sec-coverage:hover { border-color: #5AC8FA; box-shadow: 0 4px 24px rgba(90,200,250,.28); }
+.ccc-root .ccc-sec-triage:hover   { border-color: #FF9533; box-shadow: 0 4px 24px rgba(255,149,51,.28); }
+
+/* Skills tab — green identity */
+.ccc-root .ccc-skills-header { border-left: 3px solid #1FA45C; padding-left: 12px; }
+.ccc-root .ccc-skills-stat-line strong { color: #3ec77e; }
+.ccc-root .ccc-skills-groups .ccc-skill-group-header,
+.ccc-root .ccc-skills-groups [class*="group-header"] { border-left: 2px solid rgba(31,164,92,.5); }
+
+/* section-coloured divider under each titled header */
+.ccc-root .ccc-sec-spend    .ccc-eyebrow { border-bottom-color: rgba(127,0,218,.45); }
+.ccc-root .ccc-sec-meetings .ccc-eyebrow { border-bottom-color: rgba(248,240,96,.45); }
+.ccc-root .ccc-sec-fleet    .ccc-eyebrow { border-bottom-color: rgba(19,168,168,.45); }
+.ccc-root .ccc-sec-pipeline .ccc-eyebrow { border-bottom-color: rgba(232,147,12,.45); }
+.ccc-root .ccc-sec-important .ccc-eyebrow { border-bottom-color: rgba(224,68,62,.45); }
+.ccc-root .ccc-sec-coverage .ccc-eyebrow { border-bottom-color: rgba(90,200,250,.45); }
+.ccc-root .ccc-sec-triage   .ccc-eyebrow { border-bottom-color: rgba(255,149,51,.45); }
+
+/* ROI / time-saved formula note */
+.ccc-root .ccc-roi-formula {
+  font-size: 10px;
+  font-style: italic;
+  color: #9b86b8;
+  margin: 10px 0 0;
+  line-height: 1.4;
+}
+.ccc-root .ccc-sec-skills .ccc-giant-stat { color: #3ec77e; }
+
+/* Live agent-activity pulse in the header */
+.ccc-root .ccc-activity {
+  font-size: 11px;
+  color: #3ec77e;
+  font-weight: 600;
+  opacity: 0;
+}
+.ccc-root .ccc-activity.ccc-activity-pulse {
+  animation: ccc-pulse 2.4s ease-out;
+}
+@keyframes ccc-pulse {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; text-shadow: 0 0 10px rgba(62,199,126,.8); }
+  100% { opacity: 0.55; text-shadow: none; }
+}
+
+/* ── Token usage breakdown (Spend card) ── */
+.ccc-root .ccc-tokens { margin: 14px 0 4px; padding-top: 12px; border-top: 1px solid rgba(127,0,218,.20); }
+.ccc-root .ccc-tokens-eyebrow {
+  font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: #9b86b8;
+  display: block; margin-bottom: 6px;
+}
+.ccc-root .ccc-token-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: baseline; margin-bottom: 8px; }
+.ccc-root .ccc-token-row-alltime { opacity: .8; }
+.ccc-root .ccc-token { display: flex; align-items: baseline; gap: 4px; }
+.ccc-root .ccc-token-icon { font-size: 11px; opacity: .75; }
+.ccc-root .ccc-token-val { font-size: 15px; font-weight: 700; color: #e8defa; }
+.ccc-root .ccc-token-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; color: #9b86b8; }
+.ccc-root .ccc-tok-in    .ccc-token-icon { color: #5AC8FA; }
+.ccc-root .ccc-tok-out   .ccc-token-icon { color: #F8F060; }
+.ccc-root .ccc-tok-cache .ccc-token-icon { color: #13A8A8; }
+.ccc-root .ccc-tok-total .ccc-token-val  { color: #b894e0; }
+
+/* ── Insight strip — "what matters now" ── */
+.ccc-root .ccc-insights { margin-bottom: 18px; display: flex; flex-direction: column; gap: 6px; }
+.ccc-root .ccc-insights-head { margin-bottom: 2px; }
+.ccc-root .ccc-insights-title { font-size: 11px; font-weight: 800; letter-spacing: .14em; color: #b894e0; }
+.ccc-root .ccc-insight {
+  display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-radius: 10px;
+  font-size: 13px; color: #e8defa; border-left: 3px solid #7F00DA;
+  background: rgba(127,0,218,.10); transition: background 120ms;
+}
+.ccc-root .ccc-ins-icon { font-size: 15px; flex: 0 0 auto; }
+.ccc-root .ccc-ins-text { flex: 1; min-width: 0; }
+.ccc-root .ccc-ins-action {
+  flex: 0 0 auto; background: rgba(248,240,96,.14); border: 1px solid rgba(248,240,96,.4);
+  color: #F8F060; padding: 3px 10px; border-radius: 999px; font-size: 11px; cursor: pointer; font-family: inherit;
+}
+.ccc-root .ccc-ins-action:hover { background: rgba(248,240,96,.28); }
+.ccc-root .ccc-ins-critical { border-left-color: #E0443E; background: rgba(224,68,62,.13); }
+.ccc-root .ccc-ins-warn     { border-left-color: #E8930C; background: rgba(232,147,12,.12); }
+.ccc-root .ccc-ins-info     { border-left-color: #5AC8FA; background: rgba(90,200,250,.10); }
+.ccc-root .ccc-ins-good     { border-left-color: #1FA45C; background: rgba(31,164,92,.12); }
+
+/* Adaptive greeting header */
+.ccc-root .ccc-title { font-size: 24px; }
+.ccc-root .ccc-subtitle { max-width: 70ch; line-height: 1.4; }
+
+/* ── Stat ribbon — glanceable headline numbers ── */
+.ccc-root .ccc-ribbon {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;
+  margin-bottom: 16px;
+}
+.ccc-root .ccc-rib-cell {
+  background: rgba(102,0,174,.14); border: 1px solid rgba(127,0,218,.30);
+  border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px;
+  transition: border-color 150ms, transform 150ms;
+}
+.ccc-root .ccc-rib-cell:hover { border-color: #7F00DA; transform: translateY(-1px); }
+.ccc-root .ccc-rib-top { display: flex; align-items: baseline; gap: 6px; }
+.ccc-root .ccc-rib-icon { font-size: 13px; }
+.ccc-root .ccc-rib-val { font-size: 22px; font-weight: 800; color: #F8F060; letter-spacing: -.01em; }
+.ccc-root .ccc-rib-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #9b86b8; }
+.ccc-root .ccc-rib-delta { font-size: 10px; font-weight: 700; margin-left: auto; }
+.ccc-root .ccc-delta-up   { color: #ff8a84; }   /* spend up = bad → red-ish */
+.ccc-root .ccc-delta-down { color: #3ec77e; }   /* spend down = good → green */
+
+/* ── Ask-your-brain bar ── */
+.ccc-root .ccc-askbar {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+  background: rgba(102,0,174,.14); border: 1px solid rgba(127,0,218,.35);
+  border-radius: 12px; padding: 8px 12px;
+}
+.ccc-root .ccc-askbar-icon { font-size: 16px; }
+.ccc-root .ccc-askbar-input {
+  flex: 1; background: transparent; border: none; color: #e8defa; font-size: 14px;
+  font-family: inherit; outline: none;
+}
+.ccc-root .ccc-askbar-input::placeholder { color: #9b86b8; }
+.ccc-root .ccc-askbar-btn {
+  background: #6600AE; border: none; color: #fff; padding: 6px 14px; border-radius: 8px;
+  font-size: 13px; cursor: pointer; font-family: inherit; font-weight: 600;
+}
+.ccc-root .ccc-askbar-btn:hover { background: #7F00DA; }
+.ccc-root .ccc-askbar-cap {
+  background: rgba(248,240,96,.12); border: 1px solid rgba(248,240,96,.4); color: #F8F060;
+  padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-family: inherit;
+}
+.ccc-root .ccc-askbar-cap:hover { background: rgba(248,240,96,.24); }
+.ccc-root .ccc-askbar:focus-within { border-color: #7F00DA; box-shadow: 0 0 0 2px rgba(127,0,218,.25); }
+.ccc-root .ccc-ask { margin-bottom: 16px; }
+.ccc-root .ccc-ask .ccc-askbar { margin-bottom: 6px; }
+.ccc-root .ccc-ask-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ccc-root .ccc-ask-chip {
+  background: rgba(127,0,218,.10); border: 1px solid rgba(127,0,218,.28); color: #c9b6e8;
+  padding: 3px 10px; border-radius: 999px; font-size: 11.5px; cursor: pointer; font-family: inherit;
+}
+.ccc-root .ccc-ask-chip:hover { background: rgba(127,0,218,.22); color: #e8defa; }
+.ccc-root .ccc-ask-chip-recent { border-style: dashed; }
+.ccc-modal .ccc-capture-area { width: 100%; min-height: 130px; font-family: inherit; resize: vertical; }
+
+/* Self-heal health dot */
+.ccc-root .ccc-health-dot { font-size: 11px; cursor: pointer; opacity: .9; }
+.ccc-root .ccc-health-dot:hover { opacity: 1; }
+
+/* JARVIS floating orb — dark "space" halo so the additive blue particles pop like the MCU original.
+   2026-06-09 flashier pass (Tony): two-tone blue+purple glow, saturation/brightness pop on the
+   particles, and a breathing outer halo. The halo animates ONLY transform/opacity (compositor)
+   — never box-shadow keyframes — so it adds no per-frame repaint on top of the WebGL loop. */
+.ccc-orb {
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, rgba(5,5,10,0.72) 0%, rgba(5,5,12,0.55) 45%, rgba(5,5,12,0) 72%);
+  box-shadow: 0 0 48px rgba(76,168,232,0.42), 0 0 96px rgba(127,0,218,0.22), inset 0 0 60px rgba(76,168,232,0.08);
+  transition: box-shadow .25s;
+}
+.ccc-orb:hover { box-shadow: 0 0 64px rgba(76,168,232,0.6), 0 0 120px rgba(127,0,218,0.32), inset 0 0 60px rgba(76,168,232,0.10); }
+.ccc-orb canvas { border-radius: 50%; position: relative; z-index: 1; filter: saturate(1.35) brightness(1.12); }
+.ccc-orb::after {
+  content: ""; position: absolute; inset: -6%; border-radius: 50%; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle, rgba(76,168,232,0) 52%, rgba(76,168,232,0.18) 64%, rgba(127,0,218,0.22) 74%, rgba(127,0,218,0) 82%);
+  animation: ccc-orb-breathe 3.4s ease-in-out infinite;
+}
+@keyframes ccc-orb-breathe {
+  0%, 100% { transform: scale(.96);  opacity: .55; }
+  50%      { transform: scale(1.06); opacity: 1; }
+}
+
+/* 2026-06-09 holy-shit pass: the orb bundle now mirrors its state onto the wrap
+   (ccc-orb-idle/-listening/-thinking/-speaking) so the CSS halo can shift hue and
+   tempo per state — still transform/opacity only, zero per-frame JS style writes. */
+
+/* LISTENING — cyan lean */
+.ccc-orb.ccc-orb-listening {
+  box-shadow: 0 0 56px rgba(95,208,255,0.5), 0 0 100px rgba(46,159,216,0.26), inset 0 0 60px rgba(95,208,255,0.10);
+}
+.ccc-orb.ccc-orb-listening::after {
+  background: radial-gradient(circle, rgba(95,208,255,0) 52%, rgba(95,208,255,0.22) 64%, rgba(76,168,232,0.2) 74%, rgba(76,168,232,0) 82%);
+  animation-duration: 2.2s;
+}
+
+/* THINKING — brand-purple storm, fast scan, urgent breathe */
+.ccc-orb.ccc-orb-thinking {
+  box-shadow: 0 0 56px rgba(127,0,218,0.55), 0 0 110px rgba(102,0,174,0.34), inset 0 0 60px rgba(168,107,255,0.12);
+}
+.ccc-orb.ccc-orb-thinking::before {
+  background: conic-gradient(from 0deg,
+    transparent 0deg 290deg,
+    rgba(127,0,218,0) 290deg,
+    rgba(168,107,255,0.7) 336deg,
+    rgba(248,240,96,0.95) 352deg,
+    transparent 360deg);
+  animation-duration: 1.4s; opacity: .85;
+}
+.ccc-orb.ccc-orb-thinking::after {
+  background: radial-gradient(circle, rgba(127,0,218,0) 50%, rgba(168,107,255,0.24) 62%, rgba(127,0,218,0.3) 74%, rgba(127,0,218,0) 84%);
+  animation-duration: 1.6s;
+}
+
+/* SPEAKING — bright blue-violet, halo pulses with the cadence of speech */
+.ccc-orb.ccc-orb-speaking {
+  box-shadow: 0 0 64px rgba(127,184,255,0.6), 0 0 120px rgba(106,61,240,0.36), inset 0 0 60px rgba(127,184,255,0.12);
+}
+.ccc-orb.ccc-orb-speaking::before { animation-duration: 2.4s; opacity: .8; }
+.ccc-orb.ccc-orb-speaking::after {
+  background: radial-gradient(circle, rgba(127,184,255,0) 50%, rgba(127,184,255,0.26) 63%, rgba(106,61,240,0.28) 74%, rgba(106,61,240,0) 83%);
+  animation-duration: 1.1s;
+}
+.ccc-orb .ccc-orb-x {
+  position:absolute; top:6px; right:12px; color:#9fd2f5; font-size:18px; line-height:1;
+  opacity:.3; cursor:pointer; transition:opacity .15s; z-index:2;
+}
+.ccc-orb:hover .ccc-orb-x { opacity:.8; }
+.ccc-orb .ccc-orb-x:hover { opacity:1; }
+
+/* ── "Ultron is working" pipeline-stepper HUD ───────────────────────────────
+   Makes the keyless answer-latency floor legible: which stage + a LIVE elapsed
+   timer, so silence reads as "processing" not "dead". Sits BELOW the orb and the
+   mic (Tony 2026-06-09: bar was overlapping the orb's lower mass — keep the
+   thought-process readout clear of the sphere; 2026-06-09 again: a tiny bit
+   lower still while the orb is pulsing). The orb wrap anchors at
+   bottom:64px (main.js) so this stays on-screen at the default position.
+   Hidden by default; _setStage() toggles .ccc-stepper-on. */
+.ccc-orb .ccc-stepper {
+  position: absolute; left: 50%; bottom: -72px; transform: translateX(-50%) translateY(6px);
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(8,4,20,0.82); border: 1px solid rgba(127,0,218,0.45);
+  box-shadow: 0 0 18px rgba(102,0,174,0.35), inset 0 0 14px rgba(76,168,232,0.05);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  font-size: 11px; line-height: 1; color: #c9b6e8; z-index: 3;
+  opacity: 0; pointer-events: none;
+  transition: opacity .28s ease, transform .28s ease;
+}
+.ccc-orb .ccc-stepper.ccc-stepper-on {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+.ccc-orb .ccc-stepper.ccc-stepper-hiding { opacity: 0; transition: opacity .6s ease; }
+
+.ccc-orb .ccc-stepper-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 30px; transition: opacity .2s, color .2s;
+}
+.ccc-orb .ccc-stepper-cell .ccc-step-mark  { font-size: 9px; line-height: 1; }
+.ccc-orb .ccc-stepper-cell .ccc-step-icon  { font-size: 13px; line-height: 1; }
+.ccc-orb .ccc-stepper-cell .ccc-step-label {
+  font-size: 7.5px; text-transform: uppercase; letter-spacing: .04em; line-height: 1;
+}
+.ccc-orb .ccc-stepper-sep { color: rgba(127,0,218,0.4); font-size: 10px; margin: 0 -2px 8px; }
+
+/* DONE — dim + green check */
+.ccc-orb .ccc-step-done    { opacity: .5; color: #9b86b8; }
+.ccc-orb .ccc-step-done    .ccc-step-mark { color: #3ec77e; }
+/* CURRENT — bold, bright, pulsing */
+.ccc-orb .ccc-step-current { opacity: 1; color: #F8F060; font-weight: 700; }
+.ccc-orb .ccc-step-current .ccc-step-mark { color: #7F00DA; animation: ccc-step-pulse 1.1s ease-in-out infinite; }
+.ccc-orb .ccc-step-current .ccc-step-icon { filter: drop-shadow(0 0 5px rgba(127,0,218,.7)); }
+.ccc-orb .ccc-step-current .ccc-step-label { color: #F8F060; }
+/* PENDING — faint */
+.ccc-orb .ccc-step-pending { opacity: .32; color: #9b86b8; }
+.ccc-orb .ccc-step-pending .ccc-step-mark { color: #6f5a8f; }
+
+@keyframes ccc-step-pulse {
+  0%, 100% { transform: scale(1);   opacity: .65; text-shadow: 0 0 0 rgba(127,0,218,0); }
+  50%      { transform: scale(1.5); opacity: 1;   text-shadow: 0 0 8px rgba(127,0,218,.9); }
+}
+
+/* The LIVE elapsed timer — the key "he's alive" signal. Prominent: big, yellow, monospace. */
+.ccc-orb .ccc-stepper-elapsed {
+  margin-left: 6px; padding-left: 9px; border-left: 1px solid rgba(127,0,218,0.4);
+  font-size: 14px; font-weight: 800; letter-spacing: -.01em; color: #F8F060;
+  font-variant-numeric: tabular-nums; min-width: 38px; text-align: right;
+  text-shadow: 0 0 8px rgba(248,240,96,0.45);
+}
+
+/* ── Claude Usage card (Claude Code /usage replica) ─────────── */
+
+.ccc-root .ccc-card-usage {
+  grid-column: 1 / -1;
+  background: #1f1e1d;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.ccc-root .ccc-card-usage:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.ccc-root .ccc-usage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ccc-root .ccc-usage-tabs,
+.ccc-root .ccc-usage-ranges {
+  display: flex;
+  gap: 4px;
+}
+
+.ccc-root .ccc-usage-tab,
+.ccc-root .ccc-usage-range {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #9e9a94;
+  padding: 5px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 120ms, color 120ms;
+}
+
+.ccc-root .ccc-usage-range { padding: 4px 11px; font-size: 13px; }
+
+.ccc-root .ccc-usage-tab:hover,
+.ccc-root .ccc-usage-range:hover { color: #e8e5e0; }
+
+.ccc-root .ccc-usage-tab.ccc-usage-active,
+.ccc-root .ccc-usage-range.ccc-usage-active {
+  background: #3a3835;
+  color: #f3f1ee;
+}
+
+.ccc-root .ccc-usage-loading { color: #9e9a94; font-size: 13px; margin: 12px 0; }
+
+/* Overview tiles */
+.ccc-root .ccc-usage-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.ccc-root .ccc-usage-tile {
+  background: #2b2a28;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ccc-root .ccc-usage-tile-lbl { font-size: 12.5px; color: #9e9a94; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ccc-root .ccc-usage-tile-val { font-size: 17px; font-weight: 700; color: #f3f1ee; white-space: nowrap; }
+
+/* Heatmap — GitHub-style: columns are weeks, rows are weekdays */
+.ccc-root .ccc-usage-heat {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  margin: 4px 0 12px 0;
+}
+
+.ccc-root .ccc-usage-heat-cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: #2f2e2c;
+  min-width: 0;
+}
+
+.ccc-root .ccc-usage-heat-future { background: transparent; }
+.ccc-root .ccc-usage-heat-1 { background: #cad7f8; }
+.ccc-root .ccc-usage-heat-2 { background: #8fa8ee; }
+.ccc-root .ccc-usage-heat-3 { background: #5d7fe3; }
+.ccc-root .ccc-usage-heat-4 { background: #3a5bd0; }
+
+.ccc-root .ccc-usage-compare {
+  font-size: 13px;
+  color: #9e9a94;
+  margin: 2px 0 0 0;
+}
+
+/* Models chart */
+.ccc-root .ccc-usage-chart {
+  position: relative;
+  height: 180px;
+  margin: 6px 0 0 0;
+}
+
+.ccc-root .ccc-usage-gridline {
+  position: absolute;
+  left: 44px;
+  right: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ccc-root .ccc-usage-gridlbl {
+  position: absolute;
+  left: -44px;
+  top: -7px;
+  width: 36px;
+  text-align: right;
+  font-size: 11px;
+  color: #8a867f;
+}
+
+.ccc-root .ccc-usage-bars {
+  position: absolute;
+  left: 48px;
+  right: 4px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.ccc-root .ccc-usage-col {
+  flex: 1;
+  max-width: 34px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.ccc-root .ccc-usage-seg {
+  width: 100%;
+  border-radius: 2px;
+  margin-top: 1px;
+}
+
+.ccc-root .ccc-usage-col .ccc-usage-seg:last-child { border-radius: 0 0 2px 2px; }
+.ccc-root .ccc-usage-col .ccc-usage-seg:first-child { border-radius: 3px 3px 2px 2px; }
+
+.ccc-root .ccc-usage-xrow {
+  display: flex;
+  gap: 3px;
+  margin: 6px 4px 0 48px;
+}
+
+.ccc-root .ccc-usage-xcell {
+  flex: 1;
+  max-width: 34px;
+  font-size: 11px;
+  color: #8a867f;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+/* Models legend */
+.ccc-root .ccc-usage-legend {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ccc-root .ccc-usage-leg-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.ccc-root .ccc-usage-leg-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.ccc-root .ccc-usage-leg-name { font-size: 14px; color: #e8e5e0; flex: 1; }
+.ccc-root .ccc-usage-leg-io { font-size: 13.5px; color: #9e9a94; }
+.ccc-root .ccc-usage-leg-pct { font-size: 14px; font-weight: 700; color: #e8e5e0; width: 56px; text-align: right; }
+
+/* error-card Retry affordance */
+.ccc-retry-btn {
+  margin-top: 8px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+  color: #cfe6fb; background: rgba(76,168,232,0.12);
+  border: 1px solid rgba(76,168,232,0.4); border-radius: 6px; transition: background .15s;
+}
+.ccc-retry-btn:hover { background: rgba(76,168,232,0.28); }
+
+/* ── SYNAPSE LAYER — visible thought across the second brain ─────────────────
+   While Ultron thinks, SynapseLayer (main.js) draws curved axons from the orb
+   into the file explorer; every real Read/Grep/Glob flashes the actual file row
+   like a neuron firing. Brand palette: purple axon body, yellow spark head.
+   Draw/fade is WAAPI inline; only static appearance lives here. */
+.ccc-synapse-layer {
+  position: fixed; inset: 0; width: 100vw; height: 100vh;
+  pointer-events: none; z-index: 99998; overflow: visible;
+}
+.ccc-synapse-layer .ccc-syn-axon {
+  fill: none; stroke: rgba(168,107,255,0.75); stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(127,0,218,0.8));
+}
+.ccc-synapse-layer .ccc-syn-axon-minor {
+  stroke: rgba(127,0,218,0.45); stroke-width: 1.1;
+  filter: drop-shadow(0 0 3px rgba(127,0,218,0.5));
+}
+.ccc-synapse-layer .ccc-syn-head {
+  fill: #f8f060;
+  filter: drop-shadow(0 0 6px rgba(248,240,96,0.95)) drop-shadow(0 0 14px rgba(248,240,96,0.5));
+}
+.ccc-synapse-layer .ccc-syn-head-minor {
+  fill: #cfa8ff;
+  filter: drop-shadow(0 0 5px rgba(168,107,255,0.9));
+}
+
+/* neuron fires: the explorer row the spark lands on */
+@keyframes ccc-syn-fire {
+  0%   { background: rgba(248,240,96,0.42); box-shadow: 0 0 14px rgba(248,240,96,0.55), inset 0 0 8px rgba(248,240,96,0.25); color: #fffbe0; }
+  35%  { background: rgba(127,0,218,0.34); box-shadow: 0 0 12px rgba(127,0,218,0.5); }
+  100% { background: transparent; box-shadow: none; }
+}
+.nav-file-title.ccc-syn-hit, .nav-folder-title.ccc-syn-hit {
+  animation: ccc-syn-fire 1.05s ease-out;
+  border-radius: 5px;
+}
+@keyframes ccc-syn-fire-minor {
+  0%   { background: rgba(127,0,218,0.22); box-shadow: 0 0 8px rgba(168,107,255,0.35); }
+  100% { background: transparent; box-shadow: none; }
+}
+.nav-file-title.ccc-syn-hit-minor, .nav-folder-title.ccc-syn-hit-minor {
+  animation: ccc-syn-fire-minor 0.9s ease-out;
+  border-radius: 5px;
+}
+
+/* soma: membrane pulse where an action potential arrives in a neuron chain */
+.ccc-synapse-layer .ccc-syn-soma {
+  fill: rgba(248,240,96,0.85);
+  filter: drop-shadow(0 0 6px rgba(127,0,218,0.8));
+  transform-box: fill-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+/* ── Machine POV reticles (HS-R2 #2): four-corner AF brackets on entity links ──
+   level color comes from --ccc-poi-c; brackets drawn as 8 background gradients
+   (2 strokes per corner) so no extra DOM is needed. */
+a.internal-link.ccc-poi {
+  --ccc-poi-c: rgba(255,255,255,0.28);
+  padding: 0 4px;
+  background-image:
+    linear-gradient(var(--ccc-poi-c), var(--ccc-poi-c)),
+    linear-gradient(var(--ccc-poi-c), var(--ccc-poi-c)),
+    linear-gradient(var(--ccc-poi-c), var(--ccc-poi-c)),
+    linear-gradient(var(--ccc-poi-c), var(--ccc-poi-c)),
+    linear-gradient(var(--ccc-poi-c), var(--ccc-poi-c)),
+    linear-gradient(var(--ccc-poi-c), var(--ccc-poi-c)),
+    linear-gradient(var(--ccc-poi-c), var(--ccc-poi-c)),
+    linear-gradient(var(--ccc-poi-c), var(--ccc-poi-c));
+  background-position:
+    top left, top left,
+    top right, top right,
+    bottom left, bottom left,
+    bottom right, bottom right;
+  background-size:
+    7px 1.5px, 1.5px 7px,
+    7px 1.5px, 1.5px 7px,
+    7px 1.5px, 1.5px 7px,
+    7px 1.5px, 1.5px 7px;
+  background-repeat: no-repeat;
+  text-decoration: none;
+}
+a.internal-link.ccc-poi-monitor { --ccc-poi-c: rgba(245,166,35,0.85); }
+
+/* ── Deck X-Ray (HS-R2 #19) ── */
+.ccc-xray { width: min(640px, 90vw); }
+.ccc-xray-body { max-height: 50vh; overflow-y: auto; }
+.ccc-xray-row { display: flex; gap: 12px; padding: 6px 2px; border-bottom: 1px dashed rgba(255,255,255,0.08); }
+.ccc-xray-slide { font-weight: 700; color: #f8f060; min-width: 64px; font-size: 12px; }
+.ccc-xray-issue { font-size: 12px; color: #ffb86b; padding: 1px 0; }
+
+/* ── Document Tomography (HS-R2 #3) ── */
+.ccc-tomo { width: min(680px, 92vw); background: #060a10; border: 1px solid rgba(90,167,255,0.4); }
+.ccc-tomo-stack { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; }
+.ccc-tomo-layer {
+  border: 1px solid rgba(90,167,255,0.35); border-radius: 8px; padding: 7px 12px;
+  cursor: pointer; transition: opacity 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease;
+  background: linear-gradient(180deg, rgba(90,167,255,0.06), rgba(0,0,0,0.2));
+}
+.ccc-tomo-active { box-shadow: 0 0 18px rgba(90,167,255,0.35); border-color: rgba(248,240,96,0.6); }
+.ccc-tomo-name { font-weight: 700; letter-spacing: 0.05em; font-size: 12px; color: #bcd8ff; }
+.ccc-tomo-body { margin-top: 6px; }
+.ccc-tomo-item { padding: 3px 0; font-size: 12px; border-bottom: 1px dashed rgba(255,255,255,0.06); }
+
+/* ── Secret Doors (HS-R2 #16) ── */
+.ccc-door .ccc-door-title {
+  cursor: pointer;
+  border-left: 1.5px solid rgba(248,240,96,0.6);
+  text-shadow: 0 0 8px rgba(248,240,96,0.35);
+  box-shadow: inset 2px 0 8px -2px rgba(248,240,96,0.4);
+  /* perf-audit-2026-06-10: animate OPACITY (compositor-only) instead of box-shadow
+     (full repaint per frame) — these rows sit in the explorer all day */
+  animation: ccc-door-glow 2.6s ease-in-out infinite;
+}
+.ccc-door .ccc-door-title:hover { opacity: 1 !important; background: rgba(248,240,96,0.08); }
+@keyframes ccc-door-glow {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.85; }
+}
+
+/* ── Launch Control (HS-R2 #12) ── */
+.ccc-launch { width: min(640px, 90vw); background: #0a0e14; border: 1px solid rgba(90,167,255,0.35); }
+.ccc-launch-board { margin: 8px 0; }
+.ccc-launch-row { display: flex; align-items: baseline; gap: 10px; padding: 5px 4px; border-bottom: 1px dashed rgba(255,255,255,0.07); font-size: 12px; }
+.ccc-launch-lamp { color: #555; font-size: 15px; }
+.ccc-launch-running { color: #f8f060; animation: ccc-phantom-breathe 0.7s ease-in-out infinite; }
+.ccc-launch-go { color: #3ec77e; text-shadow: 0 0 8px rgba(62,199,126,0.8); }
+.ccc-launch-nogo { color: #ff5c5c; text-shadow: 0 0 8px rgba(255,92,92,0.8); }
+.ccc-launch-name { font-weight: 700; letter-spacing: 0.05em; min-width: 150px; }
+.ccc-launch-det { color: var(--text-muted); font-size: 11px; }
+.ccc-launch-foot { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.ccc-launch-abort {
+  background: rgba(255,92,92,0.15); border: 1.5px solid rgba(255,92,92,0.7);
+  color: #ff8a84; border-radius: 6px; padding: 5px 14px; font-weight: 700; cursor: pointer;
+}
+.ccc-launch-verdict { font-weight: 700; }
+.ccc-launch-go-text { color: #3ec77e; }
+.ccc-launch-nogo-text { color: #ff5c5c; }
+
+/* ── Loadout Screen (HS-R2 #18) ── */
+.ccc-loadout { width: min(680px, 92vw); }
+.ccc-loadout-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 8px 0; max-height: 46vh; overflow-y: auto; }
+.ccc-loadout-card {
+  border: 1.5px solid rgba(255,255,255,0.18); border-radius: 8px; padding: 7px 9px;
+  cursor: pointer; font-size: 11px; transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.ccc-loadout-card:hover { transform: translateY(-2px); }
+.ccc-rarity-legendary { border-color: rgba(248,240,96,0.85); box-shadow: 0 0 10px rgba(248,240,96,0.25); }
+.ccc-rarity-rare { border-color: rgba(127,0,218,0.7); }
+.ccc-loadout-on { background: rgba(127,0,218,0.22); box-shadow: 0 0 12px rgba(127,0,218,0.5); }
+.ccc-loadout-kind { font-size: 9px; letter-spacing: 0.08em; color: #f8f060; font-weight: 700; }
+.ccc-loadout-name { color: var(--text-normal); margin-top: 2px; }
+.ccc-loadout-slots { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+.ccc-loadout-chip {
+  background: rgba(127,0,218,0.25); border: 1px solid rgba(127,0,218,0.6);
+  border-radius: 999px; padding: 2px 10px; font-size: 11px;
+}
+
+/* ── The Forge (HS-R2 #17) ── */
+.ccc-forge { width: min(620px, 90vw); }
+.ccc-forge-slot { margin: 8px 0; }
+.ccc-forge-label { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; color: #f8f060; margin-bottom: 3px; }
+.ccc-forge-slot input, .ccc-forge-slot select {
+  width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(127,0,218,0.5);
+  border-radius: 6px; padding: 6px 10px; color: var(--text-normal);
+}
+.ccc-forge-anvil {
+  width: 100%; margin-top: 10px; padding: 9px; font-weight: 700; cursor: pointer;
+  background: linear-gradient(180deg, rgba(127,0,218,0.45), rgba(102,0,174,0.6));
+  border: 1px solid rgba(127,0,218,0.8); border-radius: 8px; color: #fff;
+}
+.ccc-forge-striking { animation: ccc-forge-sparks 0.5s ease-in-out infinite; }
+@keyframes ccc-forge-sparks {
+  0%, 100% { box-shadow: 0 0 8px rgba(127,0,218,0.6); }
+  50%      { box-shadow: 0 0 26px rgba(248,240,96,0.8), 0 0 50px rgba(127,0,218,0.5); }
+}
+.ccc-forge-block {
+  white-space: pre-wrap; background: rgba(0,0,0,0.3); border-left: 3px solid #F8F060;
+  padding: 10px 12px; border-radius: 6px; margin: 10px 0 8px; font-size: 13px;
+}
+
+/* ── Vault CCTV (HS-R2 #10) ── */
+.ccc-cctv { width: min(720px, 92vw); background: #0c0a12; border: 1px solid rgba(127,0,218,0.4); }
+.ccc-cctv-floor { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 6px; margin: 8px 0; }
+.ccc-cctv-box {
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 5px; padding: 5px 7px;
+  font-size: 10px; transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  display: flex; justify-content: space-between; gap: 4px;
+}
+.ccc-cctv-box-name { color: var(--text-muted); overflow: hidden; white-space: nowrap; }
+.ccc-cctv-box-n { color: #e8dcff; font-weight: 700; }
+.ccc-cctv-hot.ccc-cctv-commit { border-color: #b069ff; box-shadow: 0 0 10px rgba(176,105,255,0.6); }
+.ccc-cctv-hot.ccc-cctv-agent  { border-color: #3ec77e; box-shadow: 0 0 10px rgba(62,199,126,0.6); }
+.ccc-cctv-hot.ccc-cctv-touch  { border-color: #5aa7ff; box-shadow: 0 0 10px rgba(90,167,255,0.6); }
+.ccc-cctv-feed { min-height: 118px; font-size: 11px; font-family: var(--font-monospace); margin-bottom: 6px; }
+.ccc-cctv-line { padding: 1px 0; color: var(--text-muted); }
+
+/* ── Invisible Ink (HS-R2 #5) ── */
+.ccc-ink-overlay {
+  position: absolute; inset: 0; z-index: 60; cursor: pointer;
+  background: rgba(10, 5, 18, 0.35);
+  backdrop-filter: blur(1.2px) saturate(0.85);
+  animation: ccc-ink-fog 0.8s ease-out;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+@keyframes ccc-ink-fog { 0% { backdrop-filter: blur(0); background: transparent; } }
+.ccc-ink-status { color: #cfc4e8; font-style: italic; animation: ccc-phantom-breathe 2.2s ease-in-out infinite; }
+.ccc-ink-panel {
+  max-width: min(560px, 86%); background: rgba(15, 8, 26, 0.92);
+  border: 1px solid rgba(248,240,96,0.35); border-radius: 10px; padding: 14px 18px;
+  box-shadow: 0 0 40px rgba(248,240,96,0.12);
+}
+.ccc-ink-title { color: #f8f060; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.04em; }
+.ccc-ink-line {
+  color: #efe7a8; font-size: 13px; line-height: 1.5; margin: 4px 0;
+  text-shadow: 0 0 8px rgba(248,240,96,0.35);
+  animation: ccc-ink-develop 1.6s ease-out backwards;
+}
+.ccc-ink-contra { color: #ffb3ae; text-shadow: 0 0 8px rgba(255,92,92,0.4); }
+@keyframes ccc-ink-develop {
+  0%   { opacity: 0; filter: blur(4px); }
+  60%  { opacity: 0.6; filter: blur(1.5px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+.ccc-ink-hint { margin-top: 10px; font-size: 10px; color: var(--text-muted); }
+
+/* ── Marble Run triage (HS-R2 #11) ── */
+.ccc-marble-run { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.ccc-marble-pipe {
+  flex: 1; display: flex; gap: 5px; align-items: center; overflow: hidden;
+  border: 1px solid rgba(127,0,218,0.35); border-radius: 999px; padding: 4px 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(0,0,0,0.15));
+}
+.ccc-marble {
+  width: 13px; height: 13px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.85), var(--marble, #9b86b8) 55%);
+  box-shadow: inset -1px -2px 3px rgba(0,0,0,0.4), 0 0 5px var(--marble, #9b86b8);
+  animation: ccc-marble-roll 0.7s cubic-bezier(.2,.7,.3,1) backwards;
+}
+.ccc-marble-go    { --marble: #3ec77e; }
+.ccc-marble-hold  { --marble: #f5a623; }
+.ccc-marble-no    { --marble: #ff5c5c; }
+.ccc-marble-dup   { --marble: #777; opacity: 0.55; }
+.ccc-marble-other { --marble: #9b86b8; }
+@keyframes ccc-marble-roll {
+  0%   { transform: translateX(-40px) rotate(-180deg); opacity: 0; }
+  100% { transform: translateX(0) rotate(0); opacity: 1; }
+}
+.ccc-marble-tray {
+  font-size: 12px; padding: 3px 9px; border-radius: 7px;
+  border: 1px solid rgba(245,166,35,0.6); background: rgba(245,166,35,0.1);
+}
+.ccc-marble-tray-rattle { cursor: pointer; animation: ccc-tray-rattle 2.4s ease-in-out infinite; }
+@keyframes ccc-tray-rattle {
+  0%, 88%, 100% { transform: translateX(0); }
+  90% { transform: translateX(-1.5px) rotate(-2deg); }
+  93% { transform: translateX(1.5px) rotate(2deg); }
+  96% { transform: translateX(-1px); }
+}
+
+/* ── Time-Scrub Cinema (HS-R2 #4) ── */
+.ccc-cinema { width: min(820px, 94vw); }
+.ccc-cinema-title { margin: 0 0 4px; }
+.ccc-cinema-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+.ccc-cinema-pre {
+  max-height: 55vh; overflow-y: auto; font-size: 12px; line-height: 1.45;
+  background: rgba(0,0,0,0.25); border-radius: 6px; padding: 8px 10px; margin: 0 0 8px;
+}
+.ccc-cinema-line { white-space: pre-wrap; transition: background 0.4s ease; }
+.ccc-cinema-new { background: rgba(248,240,96,0.18); animation: ccc-cinema-heat 1.2s ease-out; }
+@keyframes ccc-cinema-heat {
+  0%   { background: rgba(248,240,96,0.5); }
+  100% { background: rgba(248,240,96,0.18); }
+}
+.ccc-cinema-bar input[type=range] { width: 100%; accent-color: #7F00DA; }
+
+/* ── Diagnostic Chamber (HS-R2 #8) ── */
+.ccc-chamber {
+  background: #0a0512;
+  border: 1px solid rgba(127,0,218,0.5);
+  box-shadow: 0 0 60px rgba(127,0,218,0.35);
+  width: min(760px, 92vw);
+}
+.ccc-chamber-head { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }
+.ccc-chamber-bust {
+  font-size: 42px; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(127,0,218,0.6); border-radius: 8px;
+  background: radial-gradient(circle at 50% 35%, rgba(127,0,218,0.25), transparent 70%);
+  filter: drop-shadow(0 0 10px rgba(127,0,218,0.6));
+}
+.ccc-chamber-name { margin: 0; color: #e8dcff; }
+.ccc-chamber-sub { font-size: 11px; color: var(--text-muted); }
+.ccc-chamber-matrix { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.ccc-chamber-attr {
+  border: 1px solid rgba(127,0,218,0.35); border-radius: 6px; padding: 6px 8px;
+  background: rgba(127,0,218,0.06); font-size: 11px;
+}
+.ccc-chamber-attr-title { color: #f8f060; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 3px; }
+.ccc-chamber-attr-body { color: var(--text-muted); word-break: break-word; }
+.ccc-chamber-line { padding: 1px 0; }
+.ccc-chamber-log {
+  max-height: 260px; overflow-y: auto; margin-bottom: 8px; font-size: 12.5px;
+  border-top: 1px solid rgba(127,0,218,0.3); padding-top: 8px;
+}
+.ccc-chamber-turn { margin: 6px 0; white-space: pre-wrap; }
+.ccc-chamber-q { color: #9fd2ff; }
+.ccc-chamber-a { color: #e8dcff; }
+.ccc-chamber-ask { display: flex; gap: 8px; }
+.ccc-chamber-ask input {
+  flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(127,0,218,0.5);
+  border-radius: 6px; padding: 6px 10px; color: var(--text-normal);
+}
+.ccc-chamber-ask button {
+  background: rgba(127,0,218,0.3); border: 1px solid rgba(127,0,218,0.7);
+  border-radius: 6px; padding: 6px 14px; color: #e8dcff; cursor: pointer;
+}
+.ccc-chamber-ask button:hover { background: rgba(127,0,218,0.5); }
+
+/* ── Corpse Run graveyard (HS-R2 #13) ── */
+.ccc-grave-strip { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+.ccc-grave { text-align: center; max-width: 130px; }
+.ccc-grave-stone { font-size: 26px; filter: grayscale(0.3); }
+.ccc-grave-name { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+.ccc-grave-loot { font-size: 10px; color: #f8f060; text-shadow: 0 0 6px rgba(248,240,96,0.6); margin-top: 2px; }
+.ccc-grave-banked { color: #3ec77e; text-shadow: none; }
+.ccc-grave-dust { color: var(--text-muted); text-shadow: none; }
+.ccc-grave-clickable { cursor: pointer; }
+.ccc-grave-clickable:hover .ccc-grave-stone { filter: none; transform: translateY(-2px); transition: transform 0.15s ease; }
+
+/* ── Raid Boss Deadlines (HS-R2 #14) ── */
+.ccc-boss-row { margin: 8px 0 10px; position: relative; }
+.ccc-boss-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ccc-boss-name { font-weight: 600; }
+.ccc-boss-bar {
+  position: relative; height: 14px; margin-top: 4px;
+  background: rgba(255,255,255,0.07); border-radius: 7px; overflow: hidden;
+  border: 1px solid rgba(255,92,92,0.35);
+}
+.ccc-boss-fill {
+  height: 100%; border-radius: 7px;
+  background: linear-gradient(90deg, #8c0f0f, #ff5c5c);
+  transition: width 0.6s cubic-bezier(.2,.7,.3,1);
+}
+.ccc-boss-hp {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 0 4px rgba(0,0,0,0.8);
+}
+.ccc-boss-dmg {
+  position: absolute; right: 6px; top: -4px; color: #f8f060; font-weight: 800; font-size: 14px;
+  animation: ccc-boss-dmg-rise 1.8s ease-out forwards; pointer-events: none;
+  text-shadow: 0 0 8px rgba(248,240,96,0.9);
+}
+@keyframes ccc-boss-dmg-rise {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-26px); opacity: 0; }
+}
+.ccc-boss-weak { margin-top: 4px; opacity: 0.75; font-size: 11px; }
+.ccc-boss-tele {
+  margin-top: 4px; font-size: 11px; padding: 5px 8px; border-radius: 6px;
+  border: 1.5px solid rgba(255,92,92,0.8);
+  animation: ccc-boss-tele-pulse 1.1s ease-in-out infinite;
+}
+.ccc-boss-tele-label { color: #ff5c5c; font-weight: 700; display: block; margin-bottom: 3px; }
+@keyframes ccc-boss-tele-pulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255,92,92,0); }
+  50%      { box-shadow: 0 0 14px rgba(255,92,92,0.45); }
+}
+.ccc-boss-item { cursor: pointer; padding: 1px 0; }
+.ccc-boss-item:hover { color: #f8f060; }
+.ccc-boss-dead { opacity: 0.6; font-size: 12px; margin: 2px 0; }
+
+/* ── Feed the Orb (HS-R2 #15) ── */
+.ccc-orb.ccc-orb-feed {
+  filter: drop-shadow(0 0 22px rgba(248,240,96,0.75));
+  transform: scale(1.06);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.ccc-orb.ccc-orb-chewing { animation: ccc-orb-chew 0.55s ease-in-out infinite; }
+@keyframes ccc-orb-chew {
+  0%, 100% { transform: scale(1) ; }
+  30%      { transform: scale(1.05, 0.94); }
+  65%      { transform: scale(0.95, 1.06); }
+}
+
+/* ── Phantom Files (HS-R2 #1): ghosts of files that don't exist yet ── */
+.ccc-phantom .ccc-phantom-title {
+  opacity: 0.45;
+  font-style: italic;
+  border-left: 1.5px dashed rgba(127,0,218,0.55);
+  cursor: pointer;
+  animation: ccc-phantom-breathe 3.2s ease-in-out infinite;
+}
+.ccc-phantom .ccc-phantom-title:hover {
+  opacity: 0.8;
+  background: rgba(127,0,218,0.12);
+}
+.ccc-phantom .ccc-phantom-soon { animation-duration: 1.6s; border-left-color: rgba(245,166,35,0.8); }
+.ccc-phantom .ccc-phantom-urgent { animation-duration: 0.8s; border-left-color: rgba(248,240,96,0.95); }
+@keyframes ccc-phantom-breathe {
+  0%, 100% { opacity: 0.32; }
+  50%      { opacity: 0.55; }
+}
+
+/* ── Aggro Radar (HS-R2 #6) ── */
+.ccc-aggro-action { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.ccc-aggro-btn {
+  background: rgba(127,0,218,0.25);
+  border: 1px solid rgba(127,0,218,0.6);
+  color: var(--text-normal);
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.ccc-aggro-btn:hover { background: rgba(127,0,218,0.45); box-shadow: 0 0 8px rgba(127,0,218,0.4); }
+a.internal-link.ccc-poi-threat  { --ccc-poi-c: rgba(255,92,92,0.95); animation: ccc-poi-pulse 1.2s ease-in-out infinite; }
+@keyframes ccc-poi-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(255,92,92,0)); }
+  50%      { filter: drop-shadow(0 0 5px rgba(255,92,92,0.7)); }
+}
