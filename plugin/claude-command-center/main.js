@@ -6,7 +6,7 @@ const VIEW_TYPE = 'claude-command-center';
 const TERMINAL_VIEW_TYPE = 'terminal:terminal';
 
 // ── Build stamp — change this on every release so stale-code is detectable ───
-const PLUGIN_BUILD = '2026-06-10-note-synapse+g1hud+g2tissue+g3editor+g4fleet+g5somatic';
+const PLUGIN_BUILD = '2026-06-11-hearfix';
 // One cheap once-per-load marker to /tmp (NOT the vault — no OneDrive sync) so the live build is
 // verifiable from outside Obsidian. (The per-60s tick.log + the redundant ~ load-stamp were removed.)
 try { require('fs').writeFileSync(require('path').join(require('os').tmpdir(), 'ultron-plugin-build.txt'), PLUGIN_BUILD + ' loaded ' + new Date().toISOString()); } catch (_) {}
@@ -3738,9 +3738,10 @@ class GravityMass {
     this._raf = null;
     this._dead = false;
     this._leafHandler = null;
-    // Auto-start when a graph view opens; stop when all close.
-    this._leafHandler = plugin.app.workspace.on('layout-change', () => { if (!this._dead) this._checkGraphViews(); });
-    plugin.app.workspace.onLayoutReady(() => { if (!this._dead) this._checkGraphViews(); });
+    // hearfix-R3V2: auto-start REMOVED — the scale wrap overwrote the graph
+    // renderer's own zoom-dependent circle scale (absolute set), making low-degree
+    // nodes render huge + pixelated at any zoom != 1. Inert until a zoom-safe
+    // multiplicative implementation lands (ISSUES R3-V2). Demo shows a Notice only.
   }
 
   destroy() {
@@ -3749,10 +3750,9 @@ class GravityMass {
     this._stop();
   }
 
-  // Demo: pulse masses on/off (toggle active state).
+  // Demo: feature parked (R3-V2) — never mutate renderer scale until zoom-safe.
   pulseDemo() {
-    if (this._active) { this._stop(); new Notice('GravityMass: off', 2000); }
-    else { this._start(); new Notice('GravityMass: on — hub nodes scaled up to 1.25x', 3000); }
+    new Notice('GravityMass is disabled pending zoom-safe scaling (broke node sizes at non-1x zoom). Tracked as R3-V2 in _relay/ISSUES.md.', 6000);
   }
 
   // ── internals ──────────────────────────────────────────────────────────────
@@ -3813,6 +3813,7 @@ class GravityMass {
   }
 
   _wrapMassNode(node, maxDeg) {
+    return; // hearfix-R3V2: parked — absolute scale writes corrupt renderer zoom scale
     if (this._wrapN.has(node) || !node || typeof node.render !== 'function') return;
     const deg = (this._massMap && this._massMap[node.id]) || 0;
     const scale = 1 + Math.min(0.25, (deg / Math.max(1, maxDeg)) * 0.25); // subtle: max 1.25x
@@ -8689,6 +8690,7 @@ class JarvisOrb {
     // Stepper HUD: clear its interval + drop refs (DOM dies with this.el below). No leak across reloads.
     if (this._stepInt) { clearInterval(this._stepInt); this._stepInt = null; }
     this._stepRunning = false; this._stepEl = null; this._stepCells = null; this._stepTimer = null;
+    try { if (this.el) this.el.classList.remove('ccc-orb-speaking'); } catch (_) {} // hearfix: class can never outlive a teardown
     // g1hud-#18: remove IBQ keystroke listener
     if (this._ibqKeyHandler) { try { document.removeEventListener('keydown', this._ibqKeyHandler, { capture: true }); } catch (_) {} this._ibqKeyHandler = null; }
     this._ibqStrip = null; this._ibqBuffer = null; this._pendingBuffer = null;
@@ -13090,24 +13092,44 @@ class CommandCenterPlugin extends Plugin {
         } catch (e) { new Notice('Brain Breathing demo error: ' + e.message, 5000); }
       }
     });
+    this.addCommand({ id: 'ux-voice-probe', name: 'UX: voice state probe (writes voice-probe.json)',
+      callback: async () => {
+        try {
+          const o = this.orb || {};
+          const out = {
+            ts: new Date().toISOString(),
+            visible: !!o.visible,
+            busy: !!o._busy, playing: !!o._playing, listening: !!o._listening,
+            pttArmed: !!o._pttArmed, sayProc: !!o._sayProc, playSrc: !!o._playSrc,
+            micMuted: !!o._micMuted, wakeOn: !!o._wakeOn,
+            hasStream: !!o._stream, streamLive: !!(o._stream && o._stream.getTracks && o._stream.getTracks().some(t => t.readyState === 'live')),
+            hasAudioCtx: !!o._actx, audioCtxState: (o._actx && o._actx.state) || null,
+            speakingClass: !!(o.el && o.el.classList.contains('ccc-orb-speaking')),
+            build: PLUGIN_BUILD,
+          };
+          await this.app.vault.adapter.write('_agent_state/claude-code/voice-probe.json', JSON.stringify(out, null, 2));
+          new Notice('voice probe: stream=' + out.hasStream + ' live=' + out.streamLive + ' ctx=' + out.audioCtxState + ' muted=' + out.micMuted + ' playing=' + out.playing + ' speakCls=' + out.speakingClass, 8000);
+        } catch (e) { new Notice('voice probe error: ' + (e && e.message), 5000); }
+      } });
     this.addCommand({ id: 'ux-input-buffer-demo', name: 'UX: Input Buffer Queue demo (fake-speaking 5s)',
       callback: async () => {
         try {
           if (!this.orb.visible) await this.orb.show();
           const wrap = this.orb.el;
           if (!wrap) { new Notice('IBQ demo: orb not visible', 3000); return; }
-          wrap.classList.add('ccc-orb-speaking');
-          this.orb.orb && this.orb.setState('speaking');
-          new Notice('IBQ demo: orb is speaking — type something! (5s)', 5000);
+          // hearfix: cleanup is scheduled BEFORE any call that can throw, and
+          // setState lives on the BUNDLE (this.orb.orb), not the JarvisOrb instance.
           setTimeout(() => {
             try {
               wrap.classList.remove('ccc-orb-speaking');
-              this.orb.orb && this.orb.setState('idle');
-              // drain pills if any were typed
+              if (this.orb.orb && this.orb.orb.setState) this.orb.orb.setState('idle');
               if (this.orb._ibqDrain) this.orb._ibqDrain();
               new Notice('IBQ demo: speaking ended — buffered text would be injected into next ask()', 4000);
             } catch (_) {}
           }, 5000);
+          wrap.classList.add('ccc-orb-speaking');
+          if (this.orb.orb && this.orb.orb.setState) this.orb.orb.setState('speaking');
+          new Notice('IBQ demo: orb is speaking — type something! (5s)', 5000);
         } catch (e) { new Notice('IBQ demo error: ' + e.message, 5000); }
       }
     });
