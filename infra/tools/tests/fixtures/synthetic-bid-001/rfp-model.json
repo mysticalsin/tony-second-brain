@@ -1,0 +1,55 @@
+{
+  "title": "Managed ERP Support Services — RFP",
+  "client": "Globex Corp",
+  "due_date": "2026-07-15",
+  "submission_method": "Electronic via procurement portal",
+  "scope": "Managed ERP application management services across EMEA",
+  "requirements": [
+    "Signed NDA before submission",
+    "Submit intent to bid within 5 days of RFP receipt",
+    "Response must include all requested documentation"
+  ],
+  "eval_criteria": [
+    {
+      "name": "Technical Capability",
+      "weight": 30.0,
+      "weight_inferred": false
+    },
+    {
+      "name": "Commercial Proposal",
+      "weight": 30.0,
+      "weight_inferred": false
+    },
+    {
+      "name": "References & Experience",
+      "weight": 25.0,
+      "weight_inferred": false
+    },
+    {
+      "name": "ESG & Compliance",
+      "weight": 15.0,
+      "weight_inferred": false
+    }
+  ],
+  "deadlines": [
+    {
+      "what": "Intent to bid",
+      "date": "2026-06-20"
+    },
+    {
+      "what": "Proposal submission",
+      "date": "2026-07-15"
+    }
+  ],
+  "mandatory_clauses": [
+    {
+      "clause": "NDA must be executed before submission",
+      "why_it_matters": "Ineligible without signed NDA",
+      "disqualifying": true
+    }
+  ],
+  "contacts": [
+    "procurement@globex.example.com"
+  ],
+  "_generated": "2026-06-10T00:00:00Z"
+}

@@ -18,7 +18,7 @@ cp -R tony-second-brain/plugin/claude-command-center "<vault>/.obsidian/plugins/
 ```
 Then in Obsidian → Settings → Community plugins:
 1. Enable **Claude Command Center**
-2. Browse → install + enable **Dataview**, **Hot Reload** (search "hot reload"), **Local REST API**
+2. Browse → install + enable **Dataview**, **Hot Reload** (search "hot reload"), **Local REST API**, **Terminal**
 
 The skeleton's `.obsidian/appearance.json` already sets the look: dark theme, accent `#6600AE`, both CSS snippets enabled. Don't change anything yet.
 
@@ -29,7 +29,17 @@ cp -R tony-second-brain/starter/demo-brain/_agent_state "<vault>/"
 ```
 This is labeled synthetic data ([DEMO] Globex/Initech bids, 8 toy agents). It exists so every dashboard surface renders immediately. Wipe it later (`starter/demo-brain/README.md`).
 
-## 4. VERIFY-BASE (the gate — all six must pass)
+## 3b. Install the infrastructure (the machine layer + Claude Code in Obsidian)
+```bash
+mkdir -p "<vault>/build" "<vault>/99_Meta"
+cp -R tony-second-brain/infra/tools "<vault>/build/tools"
+cp tony-second-brain/infra/hooks/*.sh "<vault>/99_Meta/"
+export VAULT_ROOT="<vault>"     # add to your shell profile (~/.zshrc)
+cd "$VAULT_ROOT" && python3 build/tools/build_brain_index.py --full && python3 build/tools/build_brain_api.py
+```
+Claude Code inside Obsidian: install the CLI (`npm i -g @anthropic-ai/claude-code`, then `claude login`), then in Obsidian run command "Terminal: Open terminal" — it opens at the vault root; type `claude`. The vault's `CLAUDE.md` (shipped in the skeleton) is its operating contract: it reads your notes, queries `_brain_api/`, and follows the same rules as the original. Details + refresh-loop scheduling: `infra/README.md`.
+
+## 4. VERIFY-BASE (the gate — all eight must pass)
 | # | Check | Expected |
 |---|---|---|
 | 1 | Restart Obsidian (Cmd-R) | No error popups |
@@ -38,8 +48,10 @@ This is labeled synthetic data ([DEMO] Globex/Initech bids, 8 toy agents). It ex
 | 4 | Dashboard → Pipeline tab | Two [DEMO] bids render; tide/water visual present |
 | 5 | Command palette → type "UX:" | ~20 demo commands listed; run "UX: Pipeline Tide demo" — water animates |
 | 6 | Status bar (bottom) | Agent-breath glyphs + a pulsing metabolism dot |
+| 7 | Terminal: "Terminal: Open terminal" → `claude` → ask "what bids are open?" | Claude answers from the [DEMO] `_brain_api` data |
+| 8 | `bash 99_Meta/verify-brain.sh --session-start` (in the terminal) | Brief prints: freshness, the 2 [DEMO] bids, promises pulse |
 
-**All six pass → you have the standard.** Anything fails → fix before personalizing (90% of failures: plugin not enabled, restricted mode on, demo-brain folders not copied to the vault ROOT).
+**All eight pass → you have the standard.** Anything fails → fix before personalizing (90% of failures: plugin not enabled, restricted mode on, demo-brain folders not copied to the vault ROOT).
 
 ## 5. Only now: personalize
 Hand your agent `START-HERE-AGENT.md` → it runs the interview and personalizes CONTENT (your folders' notes, your clients, your voice, your colors if you want). The structure and plugin stay the standard — that's what keeps specs, fixes, and updates drop-in compatible.

@@ -2,59 +2,171 @@
  "agents": [
   {
    "agent_name": "scout",
+   "version": "1.0",
    "status": "active",
+   "registered": "2026-06-01",
+   "category": "demo",
+   "role": "[DEMO] scout",
+   "output_type": "note",
+   "scope": {
+    "read": [
+     "**"
+    ],
+    "write": [
+     "00_Inbox/from-dust/scout/"
+    ]
+   },
+   "max_sensitivity": "internal",
    "schedule": "daily",
-   "expected_cadence_hours": 26,
-   "role": "[DEMO] scout"
+   "owner": "you",
+   "expected_cadence_hours": 26
   },
   {
    "agent_name": "drafter",
+   "version": "1.0",
    "status": "active",
+   "registered": "2026-06-01",
+   "category": "demo",
+   "role": "[DEMO] drafter",
+   "output_type": "note",
+   "scope": {
+    "read": [
+     "**"
+    ],
+    "write": [
+     "00_Inbox/from-dust/drafter/"
+    ]
+   },
+   "max_sensitivity": "internal",
    "schedule": "daily",
-   "expected_cadence_hours": 26,
-   "role": "[DEMO] drafter"
+   "owner": "you",
+   "expected_cadence_hours": 26
   },
   {
    "agent_name": "researcher",
+   "version": "1.0",
    "status": "active",
+   "registered": "2026-06-01",
+   "category": "demo",
+   "role": "[DEMO] researcher",
+   "output_type": "note",
+   "scope": {
+    "read": [
+     "**"
+    ],
+    "write": [
+     "00_Inbox/from-dust/researcher/"
+    ]
+   },
+   "max_sensitivity": "internal",
    "schedule": "daily",
-   "expected_cadence_hours": 26,
-   "role": "[DEMO] researcher"
+   "owner": "you",
+   "expected_cadence_hours": 26
   },
   {
    "agent_name": "qualifier",
+   "version": "1.0",
    "status": "active",
+   "registered": "2026-06-01",
+   "category": "demo",
+   "role": "[DEMO] qualifier",
+   "output_type": "note",
+   "scope": {
+    "read": [
+     "**"
+    ],
+    "write": [
+     "00_Inbox/from-dust/qualifier/"
+    ]
+   },
+   "max_sensitivity": "internal",
    "schedule": "daily",
-   "expected_cadence_hours": 26,
-   "role": "[DEMO] qualifier"
+   "owner": "you",
+   "expected_cadence_hours": 26
   },
   {
    "agent_name": "curator",
+   "version": "1.0",
    "status": "active",
+   "registered": "2026-06-01",
+   "category": "demo",
+   "role": "[DEMO] curator",
+   "output_type": "note",
+   "scope": {
+    "read": [
+     "**"
+    ],
+    "write": [
+     "00_Inbox/from-dust/curator/"
+    ]
+   },
+   "max_sensitivity": "internal",
    "schedule": "daily",
-   "expected_cadence_hours": 26,
-   "role": "[DEMO] curator"
+   "owner": "you",
+   "expected_cadence_hours": 26
   },
   {
    "agent_name": "watchdog",
+   "version": "1.0",
    "status": "active",
+   "registered": "2026-06-01",
+   "category": "demo",
+   "role": "[DEMO] watchdog",
+   "output_type": "note",
+   "scope": {
+    "read": [
+     "**"
+    ],
+    "write": [
+     "00_Inbox/from-dust/watchdog/"
+    ]
+   },
+   "max_sensitivity": "internal",
    "schedule": "daily",
-   "expected_cadence_hours": 26,
-   "role": "[DEMO] watchdog"
+   "owner": "you",
+   "expected_cadence_hours": 26
   },
   {
    "agent_name": "scribe",
+   "version": "1.0",
    "status": "active",
+   "registered": "2026-06-01",
+   "category": "demo",
+   "role": "[DEMO] scribe",
+   "output_type": "note",
+   "scope": {
+    "read": [
+     "**"
+    ],
+    "write": [
+     "00_Inbox/from-dust/scribe/"
+    ]
+   },
+   "max_sensitivity": "internal",
    "schedule": "daily",
-   "expected_cadence_hours": 26,
-   "role": "[DEMO] scribe"
+   "owner": "you",
+   "expected_cadence_hours": 26
   },
   {
    "agent_name": "analyst",
+   "version": "1.0",
    "status": "active",
+   "registered": "2026-06-01",
+   "category": "demo",
+   "role": "[DEMO] analyst",
+   "output_type": "note",
+   "scope": {
+    "read": [
+     "**"
+    ],
+    "write": [
+     "00_Inbox/from-dust/analyst/"
+    ]
+   },
+   "max_sensitivity": "internal",
    "schedule": "daily",
-   "expected_cadence_hours": 26,
-   "role": "[DEMO] analyst"
+   "owner": "you",
+   "expected_cadence_hours": 26
   }
  ]
 }
