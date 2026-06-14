@@ -29,7 +29,7 @@ cp -R tony-second-brain/starter/demo-brain/_agent_state "<vault>/"
 ```
 This is labeled synthetic data ([DEMO] Globex/Initech bids, 8 toy agents). It exists so every dashboard surface renders immediately. Wipe it later (`starter/demo-brain/README.md`).
 
-## 3b. Install the infrastructure (the machine layer + Claude Code in Obsidian)
+## 3b. Install the infrastructure (the machine layer + conduct/safety layer + Claude Code in Obsidian)
 ```bash
 mkdir -p "<vault>/build" "<vault>/99_Meta"
 cp -R tony-second-brain/infra/tools "<vault>/build/tools"
@@ -38,6 +38,14 @@ export VAULT_ROOT="<vault>"     # add to your shell profile (~/.zshrc)
 cd "$VAULT_ROOT" && python3 build/tools/build_brain_index.py --full && python3 build/tools/build_brain_api.py
 ```
 Claude Code inside Obsidian: install the CLI (`npm i -g @anthropic-ai/claude-code`, then `claude login`), then in Obsidian run command "Terminal: Open terminal" — it opens at the vault root; type `claude`. The vault's `CLAUDE.md` (shipped in the skeleton) is its operating contract: it reads your notes, queries `_brain_api/`, and follows the same rules as the original. Details + refresh-loop scheduling: `infra/README.md`.
+
+**Conduct and safety layer (optional but recommended):** the system ships a five-gate enforcement stack — a PreToolUse write-check hook, a triage promotion gate with per-agent reputation thresholds, an injection scanner for external content, an integrity check for canonical files, and an incident path. Every claim agents write to the vault is tagged `verified / assumed / unknown`. Run the eval harness any time to confirm behavioral gates are working:
+```bash
+bash "$VAULT_ROOT/99_Meta/conduct-eval.sh"      # four behavioral probes — exit 0 = all pass
+bash "$VAULT_ROOT/99_Meta/conduct-sync-check.sh" # confirm all inlined conduct copies are in sync
+bash "$VAULT_ROOT/99_Meta/conduct-stats.sh" --check  # confirm all five success metrics are within target
+```
+Full spec: `specs/10-conduct-and-safety.md`.
 
 ## 4. VERIFY-BASE (the gate — all eight must pass)
 | # | Check | Expected |

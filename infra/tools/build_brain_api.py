@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -118,6 +119,110 @@ def build_bid_endpoints() -> int:
     return n
 
 
+def _parse_frontmatter(text: str) -> dict:
+    """Extract YAML-like frontmatter from a markdown file (simple key: value only)."""
+    fm: dict = {}
+    if not text.startswith("---"):
+        return fm
+    end = text.find("---", 3)
+    if end == -1:
+        return fm
+    block = text[3:end]
+    for line in block.splitlines():
+        m = re.match(r"^(\w[\w_-]*):\s*(.+)$", line.strip())
+        if m:
+            key, val = m.group(1), m.group(2).strip()
+            # Strip inline YAML list brackets if present
+            if val.startswith("[") and val.endswith("]"):
+                val = [v.strip().strip('"\'') for v in val[1:-1].split(",") if v.strip()]
+            fm[key] = val
+    return fm
+
+
+def _brief_excerpt(text: str, max_chars: int = 200) -> str:
+    """Return the first blockquote or first non-empty paragraph after frontmatter."""
+    # Skip frontmatter
+    if text.startswith("---"):
+        end = text.find("---", 3)
+        text = text[end + 3:] if end != -1 else text
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith(">"):
+            return line.lstrip("> ").strip()[:max_chars]
+        if line and not line.startswith("#"):
+            return line[:max_chars]
+    return ""
+
+
+def build_account_briefs() -> int:
+    """For each folder in Clients/, parse _brief.md and emit brief.json + known_signals stub.
+
+    Sources:
+      - Clients/<slug>/_brief.md        — frontmatter + first blockquote/paragraph
+      - Clients/<slug>/_stakeholders.md — existence check only (path ref)
+      - Clients/<slug>/_last-touchpoint.md — existence check only (path ref)
+
+    Writes:
+      - _brain_api/account/<slug>/brief.json
+      - _brain_api/account/<slug>/known_signals.json  (stub if not already present)
+    """
+    clients_dir = VAULT / "Clients"
+    account_dir = API / "account"
+    account_dir.mkdir(parents=True, exist_ok=True)
+
+    if not clients_dir.exists():
+        return 0
+
+    n = 0
+    for client_folder in sorted(clients_dir.iterdir()):
+        if not client_folder.is_dir():
+            continue
+        slug = client_folder.name
+        brief_md = client_folder / "_brief.md"
+        if not brief_md.exists():
+            continue
+
+        text = brief_md.read_text(encoding="utf-8")
+        fm = _parse_frontmatter(text)
+        excerpt = _brief_excerpt(text)
+
+        # Resolve optional companion files
+        stakeholders_path = client_folder / "_stakeholders.md"
+        touchpoint_path = client_folder / "_last-touchpoint.md"
+
+        brief = {
+            "slug": slug,
+            "name": fm.get("client") or fm.get("partner") or slug,
+            "type": fm.get("type", "client-brief"),
+            "industry": fm.get("industry"),
+            "stage": fm.get("stage"),
+            "last_touchpoint": fm.get("last_touch"),
+            "excerpt": excerpt,
+            "stakeholders_ref": f"Clients/{slug}/_stakeholders.md" if stakeholders_path.exists() else None,
+            "touchpoint_log_ref": f"Clients/{slug}/_last-touchpoint.md" if touchpoint_path.exists() else None,
+            "meetings_link": "Meetings/recaps",
+            "brief_source": f"Clients/{slug}/_brief.md",
+            "tags": fm.get("tags", []),
+            "generated": utcnow(),
+        }
+
+        out_dir = account_dir / slug
+        out_dir.mkdir(exist_ok=True)
+        (out_dir / "brief.json").write_text(json.dumps(brief, indent=2))
+
+        # Stub known_signals only if it doesn't exist yet
+        signals_path = out_dir / "known_signals.json"
+        if not signals_path.exists():
+            signals_path.write_text(json.dumps({
+                "_todo": "Populated by Phase 9 signal-extraction pipeline.",
+                "slug": slug,
+                "signals": [],
+            }, indent=2))
+
+        n += 1
+    return n
+
+
 def build_canonical_stubs() -> None:
     """Create directory tree for canonical blocks. Actual canonicals filled by build_brain_index."""
     canonical = API / "canonical"
@@ -144,6 +249,7 @@ def main() -> int:
 
     build_agent_scopes(agents)
     n_bids = build_bid_endpoints()
+    n_accounts = build_account_briefs()
     build_canonical_stubs()
 
     # Empty changes endpoint
@@ -157,6 +263,7 @@ def main() -> int:
     print(f"Built {API}")
     print(f"  registered agents:    {len(agents)}")
     print(f"  bid endpoints:        {n_bids}")
+    print(f"  account briefs:       {n_accounts}")
     print(f"  canonical scaffolds:  exec_summary, capability_statement, case_study, compliance_response, email_template, pricing_pattern")
     return 0
 

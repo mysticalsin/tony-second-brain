@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+# conduct-dream.sh — closes the conduct self-improvement loop.
+# Nightly: distil conduct-violations.jsonl into a digest, then — when
+# recurring violations exist — invoke the claude CLI to propose
+# refinements to agent-behavior-standard.md (owner approves; never auto-edited).
+#
+# Recurrence trigger (either condition):
+#   • any rule with ≥ 3 hits in the last 7 days
+#   • any HIGH-severity rule that appears more than once in the last 7 days
+#
+# Usage:
+#   bash infra/hooks/conduct-dream.sh            # normal run
+#   bash infra/hooks/conduct-dream.sh --dry-run  # recurrence check only; no claude call
+#
+# Schedule nightly via launchd (see infra/conduct/launchd/) at 02:30.
+#
+# Dependencies: bash 3+, python3 stdlib, $HOME/.local/bin/claude
+# bash -n clean; python3 -m py_compile inline scripts are stdlib-only.
+
+set -uo pipefail
+
+# ── Paths ────────────────────────────────────────────────────────────────────
+
+VAULT="${VAULT_ROOT:?Set VAULT_ROOT to your vault path}"
+OUT_DIR="$VAULT/_agent_state/_conduct"
+DIGEST="$OUT_DIR/dream-digest.json"
+REFINEMENTS="$OUT_DIR/proposed-refinements.md"
+STANDARD="$VAULT/infra/conduct/agent-behavior-standard.md"
+CLAUDE_BIN="$HOME/.local/bin/claude"
+
+mkdir -p "$OUT_DIR"
+
+# ── Flags ─────────────────────────────────────────────────────────────────────
+
+DRY_RUN=0
+[[ "${1:-}" == "--dry-run" ]] && DRY_RUN=1
+
+# ── Step 1: produce the 7-day digest ─────────────────────────────────────────
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "$SCRIPT_DIR/conduct-stats.sh" --dream > "$DIGEST" 2>/dev/null \
+  || printf '{"note":"no violations logged"}\n' > "$DIGEST"
+
+echo "conduct-dream: digest written → $DIGEST"
+
+# ── Step 2: recurrence check (python3, stdlib only) ──────────────────────────
+
+RECURRENCE_RESULT=$(python3 - "$DIGEST" <<'PYEOF'
+import sys, json
+
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as fh:
+        d = json.load(fh)
+except Exception as exc:
+    print(f"SKIP:digest_unreadable:{exc}")
+    sys.exit(0)
+
+if d.get("status") == "no_data" or d.get("total_in_window", 0) == 0:
+    print("SKIP:no_violations_in_window")
+    sys.exit(0)
+
+top = d.get("top_violations", [])
+high_sev = d.get("high_severity_last7", [])
+
+for v in top:
+    if v.get("count", 0) >= 3:
+        print(f"RECURRING:rule_3plus:{v['rule']}:{v['count']}")
+        sys.exit(0)
+
+high_rules: dict = {}
+for h in high_sev:
+    r = h.get("rule", "?")
+    high_rules[r] = high_rules.get(r, 0) + 1
+
+for rule, cnt in high_rules.items():
+    if cnt > 1:
+        print(f"RECURRING:high_severity_repeat:{rule}:{cnt}")
+        sys.exit(0)
+
+print("SKIP:no_recurring_violations")
+PYEOF
+)
+
+echo "conduct-dream: recurrence check → $RECURRENCE_RESULT"
+
+# ── Step 3: branch on result ──────────────────────────────────────────────────
+
+if [[ "$RECURRENCE_RESULT" == SKIP:* ]]; then
+  echo "conduct-dream: no recurring violations — skipping claude refinement call."
+  cat <<EOF
+
+NEXT (agent-dreaming, nightly):
+  - Read $DIGEST.
+  - No recurring violations found ($RECURRENCE_RESULT). No call made.
+  - Next run: tomorrow at 02:30.
+EOF
+  exit 0
+fi
+
+# ── Step 4: RECURRING path — call claude CLI ─────────────────────────────────
+
+echo "conduct-dream: recurring violations detected ($RECURRENCE_RESULT) — preparing refinement prompt."
+
+if [[ $DRY_RUN -eq 1 ]]; then
+  echo "conduct-dream: --dry-run active — skipping claude call. Would have triggered refinement."
+  exit 0
+fi
+
+if [[ ! -x "$CLAUDE_BIN" ]]; then
+  echo "conduct-dream: ERROR — claude binary not found at $CLAUDE_BIN. Aborting." >&2
+  exit 1
+fi
+
+DIGEST_COMPACT=$(python3 -c "
+import json, sys
+with open(sys.argv[1]) as f:
+    d = json.load(f)
+print(json.dumps(d, separators=(',',':')))
+" "$DIGEST" 2>/dev/null || cat "$DIGEST")
+
+PROMPT="Given this conduct-violation digest $(printf '%s' "$DIGEST_COMPACT"), propose SPECIFIC refinements to infra/conduct/agent-behavior-standard.md that would have prevented them; output a markdown proposal; do NOT edit any file."
+
+DATESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+TRIGGER_LABEL="${RECURRENCE_RESULT#RECURRING:}"
+
+echo "conduct-dream: calling claude ($CLAUDE_BIN) — this may take 30–90 seconds."
+
+TMPOUT=$(mktemp "${TMPDIR:-/tmp}/conduct-dream-XXXXXX.md")
+trap 'rm -f "$TMPOUT"' EXIT
+
+"$CLAUDE_BIN" \
+  -p "$PROMPT" \
+  --model claude-sonnet-4-6 \
+  --setting-sources "" \
+  --strict-mcp-config \
+  --mcp-config '{"mcpServers":{}}' \
+  > "$TMPOUT" 2>&1
+CLAUDE_EXIT=$?
+
+if [[ $CLAUDE_EXIT -ne 0 ]]; then
+  echo "conduct-dream: WARNING — claude exited with code $CLAUDE_EXIT. Raw output:" >&2
+  cat "$TMPOUT" >&2
+fi
+
+# ── Step 5: append to proposed-refinements.md (never overwrite) ──────────────
+
+{
+  printf '\n---\n\n'
+  printf '## Proposed Refinements — %s\n\n' "$DATESTAMP"
+  printf '**Trigger:** `%s`  \n' "$TRIGGER_LABEL"
+  printf '**Digest:** `%s`  \n' "$DIGEST"
+  printf '**Claude exit code:** %s  \n\n' "$CLAUDE_EXIT"
+  cat "$TMPOUT"
+  printf '\n\n> Auto-generated by conduct-dream.sh. Owner must approve before editing agent-behavior-standard.md.\n'
+} >> "$REFINEMENTS"
+
+echo "conduct-dream: proposal appended → $REFINEMENTS"
+echo "conduct-dream: done. Review $REFINEMENTS and apply manually to $STANDARD."
+
+cat <<EOF
+
+NEXT:
+  - Review: $REFINEMENTS
+  - Approve or reject each proposal.
+  - Apply approved changes manually to: $STANDARD
+  - conduct-dream.sh NEVER edits the standard.
+EOF

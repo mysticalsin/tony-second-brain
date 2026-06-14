@@ -26,6 +26,7 @@ This is not a plugin you install. **It's a blueprint your AI agent builds — pe
 | 🔧 **Machine layer** | A `_brain_api/` of pre-computed JSON endpoints your agents query instead of crawling files, an hourly refresh loop, honest cost tracking with transcript dedupe, and a relay baton for multi-model handoffs. |
 | 🧰 **Agent skill loadout** | The coding-agent side of the system: process-discipline skills (superpowers), Obsidian-correct writing (obsidian-skills), token discipline (caveman + rtk, ~60–90% savings), knowledge-graph-first lookup (graphify), cross-model plan review, and a self-learning domain skill library with a mandatory confidentiality guard. |
 | 🪃 **Multi-model relay** | Claude, Codex, Gemini, and local models work as consecutive shifts of ONE worker: a `_relay/` baton carries live state, decisions, and next steps across handoffs — session limits and model switches stop being resets. |
+| 🛡️ **Conduct and safety layer** | A five-gate enforcement stack (preflight write-check, triage promotion gate, injection scanner, integrity check, incident path) + a four-probe behavioral eval harness with causal negative-control + a nightly self-improvement dreaming loop. The colour system (`verified / assumed / unknown`) labels every claim agents make in vault writes. Value is in the gates and the regression suite — not in the conduct prose alone. |
 
 Everything binds to **real data in your vault**. The #1 design law: *no theater* — if a pixel moves, it's because your data moved.
 
@@ -86,6 +87,7 @@ specs/
   07-skills-loadout.md     ← the agent-side skill stack (caveman, graphify, superpowers…)
   08-relay-baton.md        ← the cross-model baton protocol (one worker, many models)
   09-trust-and-tape.md     ← promise ledger, contradiction detector, deal microstructure tape
+  10-conduct-and-safety.md ← conduct standard, five enforcement gates, behavioral eval, dreaming loop
 verification/SELFTEST.md   ← behavioral checks per phase — "loads clean" is not done
 LICENSE                    ← MIT, with attribution request
 ```

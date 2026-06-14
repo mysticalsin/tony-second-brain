@@ -13,6 +13,10 @@ Use your strongest model for PLANNING only; execute with the fast/cheap tier. Ne
 ## Rule 2 — The vault IS the shared agent memory
 Every agent writes to `00_Inbox/from-dust/<agent>/` with SBAP frontmatter (`source_agent`, `source_run_id`, `generated`, `output_type`, `target_path`, `confidence`). Triage (`build/tools/triage_dust_writes.py`) promotes confidence ≥ 0.85, holds the rest. Conflicts become versioned files — last-write-wins is FORBIDDEN.
 
+**Canonical navigation & write contract (all models):** [`99_Meta/agent-nav.md`](99_Meta/agent-nav.md) — the single source of truth for how every model (Claude, Codex, Gemini, Hermes, Dust) navigates and writes to this brain. If any per-model instruction file disagrees with agent-nav.md, agent-nav.md wins.
+
+**Shared conduct standard (Fable-5 grade):** [`99_Meta/agent-behavior-standard.md`](99_Meta/agent-behavior-standard.md) — how every agent sources, reasons, refuses, and handles being wrong. Governs honesty, search discipline, sourcing/IP, legal-financial caution, evenhandedness, wellbeing, and refusals. Style defers to your brand DNA; conduct binds on every turn. Inline core: see `99_Meta/conduct-core.md`.
+
 ## Rule 3 — Verification before done
 Never claim a feature/fix works because "the diff looks right". Drive it, observe the effect, then say done. The plugin ships demo commands ("UX: … demo") and a self-test for exactly this.
 

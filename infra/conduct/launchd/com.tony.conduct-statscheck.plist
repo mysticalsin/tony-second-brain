@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.tony.conduct-statscheck.plist
+  ==================================
+  Nightly conduct-stats.sh --check run at 03:00.
+  Fires last in the nightly sequence (eval 02:00, dream 02:45, statscheck 03:00).
+
+  INSTALLATION (macOS launchd):
+  1. Replace all /Users/YOU/path/to/... placeholders with your actual paths.
+  2. Set VAULT_ROOT in EnvironmentVariables to your vault path.
+  3. Copy to ~/Library/LaunchAgents/ and load:
+       cp infra/conduct/launchd/com.tony.conduct-statscheck.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.tony.conduct-statscheck.plist
+  4. To test: launchctl start com.tony.conduct-statscheck
+
+  NOTE: launchd does NOT expand shell variables in plist string values.
+  You MUST replace placeholder strings with literal absolute paths.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tony.conduct-statscheck</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <!-- EDIT: replace with the absolute path to your repo's conduct-stats.sh -->
+        <string>/Users/YOU/path/to/repo/infra/hooks/conduct-stats.sh</string>
+        <string>--check</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>3</integer>
+        <key>Minute</key><integer>0</integer>
+    </dict>
+
+    <!-- EDIT: set WorkingDirectory to your vault root -->
+    <key>WorkingDirectory</key>
+    <string>/Users/YOU/path/to/vault</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/YOU</string>
+        <!-- EDIT: set VAULT_ROOT to your vault path (same as WorkingDirectory) -->
+        <key>VAULT_ROOT</key>
+        <string>/Users/YOU/path/to/vault</string>
+    </dict>
+
+    <!-- EDIT: set log paths to a writable location -->
+    <key>StandardOutPath</key>
+    <string>/Users/YOU/path/to/vault/_agent_state/_conduct/conduct-statscheck.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/YOU/path/to/vault/_agent_state/_conduct/conduct-statscheck-err.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>

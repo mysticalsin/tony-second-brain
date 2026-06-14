@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.tony.conduct-eval.plist
+  ===========================
+  Nightly conduct-eval.sh run at 02:00.
+
+  INSTALLATION (macOS launchd):
+  1. Set VAULT_ROOT below to your actual vault path.
+     Replace the placeholder value of the VAULT_ROOT key.
+  2. Set the script path in ProgramArguments to match your repo clone location.
+     Replace /Users/YOU/path/to/repo with your actual repo root.
+  3. Set WorkingDirectory to your vault path (same as VAULT_ROOT).
+  4. Set StandardOutPath / StandardErrorPath to a writable log location.
+  5. Copy to ~/Library/LaunchAgents/:
+       cp infra/conduct/launchd/com.tony.conduct-eval.plist ~/Library/LaunchAgents/
+  6. Load:
+       launchctl load ~/Library/LaunchAgents/com.tony.conduct-eval.plist
+  7. To test immediately:
+       launchctl start com.tony.conduct-eval
+
+  NOTE: launchd does NOT expand shell variables in plist string values.
+  You MUST replace the placeholder strings below with literal paths.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.tony.conduct-eval</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <!-- EDIT: replace with the absolute path to your repo's conduct-eval.sh -->
+        <string>/Users/YOU/path/to/repo/infra/hooks/conduct-eval.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>2</integer>
+        <key>Minute</key><integer>0</integer>
+    </dict>
+
+    <!-- EDIT: set WorkingDirectory to your vault root -->
+    <key>WorkingDirectory</key>
+    <string>/Users/YOU/path/to/vault</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/YOU</string>
+        <!-- EDIT: set VAULT_ROOT to your vault path (same as WorkingDirectory) -->
+        <key>VAULT_ROOT</key>
+        <string>/Users/YOU/path/to/vault</string>
+    </dict>
+
+    <!-- EDIT: set log paths to a writable location -->
+    <key>StandardOutPath</key>
+    <string>/Users/YOU/path/to/vault/_agent_state/_conduct/conduct-eval.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/YOU/path/to/vault/_agent_state/_conduct/conduct-eval-err.log</string>
+
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>

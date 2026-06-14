@@ -1,0 +1,139 @@
+/* ============================================================
+   account-colors.css  ·  v1 PER-ACCOUNT + CALLOUTS  (starter template)
+   Additive layer on top of color-codification.css.
+   Gives EACH client account its own vivid hue so every account is
+   visually distinct at a glance, flowing through:
+     Clients/<acct>/
+     02_Areas/Accounts/<acct>/
+     Meetings/by-client/<acct>/
+     People/<acct>-*
+   Plus colour-coded callouts for note bodies.
+   Loaded AFTER color-codification.css so per-account hue overrides
+   the blanket Clients/ green.
+
+   HOW TO CUSTOMISE
+   ─────────────────
+   1. Replace the generic account slugs (acme-corp, globex, …) with
+      your real account folder names (must match the folder slug
+      exactly — lowercase, hyphens).
+   2. Pick a hex color per account from the palette comments below.
+   3. Add or remove account blocks as needed.
+   4. Keep the callout blocks in sync with the explorer blocks so
+      > [!acme-corp] callouts match the explorer hue.
+
+   Rollback: toggle this snippet off in Settings → Appearance.
+
+   SUGGESTED PALETTE (one per account — keep them visually distinct)
+   ─────────────────────────────────────────────────────────────────
+     Cyan    #06B6D4   ·   Red      #EF4444   ·   Pink    #EC4899
+     Blue    #3B82F6   ·   Green    #22C55E   ·   Amber   #F59E0B
+     Teal    #14B8A6   ·   Violet  #8B5CF6   ·   Orange  #F97316
+   ============================================================ */
+
+/* ---------- helper: shared weight for account titles ---------- */
+body .nav-folder-title[data-path^="Clients/"],
+body .nav-file-title[data-path^="Clients/"],
+body .nav-folder-title[data-path^="Meetings/by-client/"],
+body .nav-file-title[data-path^="Meetings/by-client/"] { font-weight: 600; }
+
+/* ===== ACME-CORP — CYAN #06B6D4 ===== */
+body .nav-folder-title[data-path="Clients/acme-corp"],
+body .nav-folder-title[data-path^="Clients/acme-corp/"],
+body .nav-file-title[data-path^="Clients/acme-corp/"],
+body .nav-folder-title[data-path^="02_Areas/Accounts/acme-corp"],
+body .nav-file-title[data-path^="02_Areas/Accounts/acme-corp/"],
+body .nav-folder-title[data-path^="Meetings/by-client/acme-corp"],
+body .nav-file-title[data-path^="Meetings/by-client/acme-corp/"],
+body .nav-file-title[data-path^="People/acme-corp-"] { color: #06B6D4 !important; }
+
+/* ===== GLOBEX — RED #EF4444 ===== */
+body .nav-folder-title[data-path="Clients/globex"],
+body .nav-folder-title[data-path^="Clients/globex/"],
+body .nav-file-title[data-path^="Clients/globex/"],
+body .nav-folder-title[data-path^="02_Areas/Accounts/globex"],
+body .nav-file-title[data-path^="02_Areas/Accounts/globex/"],
+body .nav-folder-title[data-path^="Meetings/by-client/globex"],
+body .nav-file-title[data-path^="Meetings/by-client/globex/"],
+body .nav-file-title[data-path^="People/globex-"] { color: #EF4444 !important; }
+
+/* ===== INITECH — PINK #EC4899 ===== */
+body .nav-folder-title[data-path="Clients/initech"],
+body .nav-folder-title[data-path^="Clients/initech/"],
+body .nav-file-title[data-path^="Clients/initech/"],
+body .nav-folder-title[data-path^="02_Areas/Accounts/initech"],
+body .nav-file-title[data-path^="02_Areas/Accounts/initech/"],
+body .nav-folder-title[data-path^="Meetings/by-client/initech"],
+body .nav-file-title[data-path^="Meetings/by-client/initech/"],
+body .nav-file-title[data-path^="People/initech-"] { color: #EC4899 !important; }
+
+/* ===== UMBRELLA — BLUE #3B82F6 ===== */
+body .nav-folder-title[data-path="Clients/umbrella"],
+body .nav-folder-title[data-path^="Clients/umbrella/"],
+body .nav-file-title[data-path^="Clients/umbrella/"],
+body .nav-folder-title[data-path^="02_Areas/Accounts/umbrella"],
+body .nav-file-title[data-path^="02_Areas/Accounts/umbrella/"],
+body .nav-folder-title[data-path^="Meetings/by-client/umbrella"],
+body .nav-file-title[data-path^="Meetings/by-client/umbrella/"],
+body .nav-file-title[data-path^="People/umbrella-"] { color: #3B82F6 !important; }
+
+/* ===== HOOLI — GREEN #22C55E ===== */
+body .nav-folder-title[data-path="Clients/hooli"],
+body .nav-folder-title[data-path^="Clients/hooli/"],
+body .nav-file-title[data-path^="Clients/hooli/"],
+body .nav-folder-title[data-path^="02_Areas/Accounts/hooli"],
+body .nav-file-title[data-path^="02_Areas/Accounts/hooli/"],
+body .nav-folder-title[data-path^="Meetings/by-client/hooli"],
+body .nav-file-title[data-path^="Meetings/by-client/hooli/"],
+body .nav-file-title[data-path^="People/hooli-"] { color: #22C55E !important; }
+
+/* ===== SOYLENT — AMBER #F59E0B ===== */
+body .nav-folder-title[data-path="Clients/soylent"],
+body .nav-folder-title[data-path^="Clients/soylent/"],
+body .nav-file-title[data-path^="Clients/soylent/"],
+body .nav-folder-title[data-path^="02_Areas/Accounts/soylent"],
+body .nav-file-title[data-path^="02_Areas/Accounts/soylent/"],
+body .nav-folder-title[data-path^="Meetings/by-client/soylent"],
+body .nav-file-title[data-path^="Meetings/by-client/soylent/"],
+body .nav-file-title[data-path^="People/soylent-"] { color: #F59E0B !important; }
+
+/* ===== INTERNAL people — SLATE #94A3B8 (firm staff, not a client) ===== */
+body .nav-file-title[data-path^="People/internal-"] { color: #94A3B8 !important; }
+
+/* ============================================================
+   COLOUR-CODED CALLOUTS — usable in any note body:
+     > [!cyan]   > [!red]   > [!pink]   > [!blue]   > [!green]
+     > [!amber]  > [!violet] > [!teal]  > [!orange]
+   Each sets --callout-color (R,G,B) which Obsidian uses for the
+   title bar, icon, and left border.
+   ============================================================ */
+.callout[data-callout="cyan"]   { --callout-color:   6, 182, 212; --callout-icon: lucide-droplet; }
+.callout[data-callout="red"]    { --callout-color: 239,  68,  68; --callout-icon: lucide-alert-triangle; }
+.callout[data-callout="pink"]   { --callout-color: 236,  72, 153; --callout-icon: lucide-heart; }
+.callout[data-callout="blue"]   { --callout-color:  59, 130, 246; --callout-icon: lucide-info; }
+.callout[data-callout="green"]  { --callout-color:  34, 197,  94; --callout-icon: lucide-check-circle; }
+.callout[data-callout="amber"]  { --callout-color: 245, 158,  11; --callout-icon: lucide-star; }
+.callout[data-callout="violet"] { --callout-color: 139,  92, 246; --callout-icon: lucide-sparkles; }
+.callout[data-callout="teal"]   { --callout-color:  20, 184, 166; --callout-icon: lucide-waves; }
+.callout[data-callout="orange"] { --callout-color: 249, 115,  22; --callout-icon: lucide-flame; }
+
+/* per-account callouts: > [!acme-corp] etc. — match the explorer hue */
+.callout[data-callout="acme-corp"]  { --callout-color:   6, 182, 212; --callout-icon: lucide-building-2; }
+.callout[data-callout="globex"]     { --callout-color: 239,  68,  68; --callout-icon: lucide-building-2; }
+.callout[data-callout="initech"]    { --callout-color: 236,  72, 153; --callout-icon: lucide-building-2; }
+.callout[data-callout="umbrella"]   { --callout-color:  59, 130, 246; --callout-icon: lucide-building-2; }
+.callout[data-callout="hooli"]      { --callout-color:  34, 197,  94; --callout-icon: lucide-building-2; }
+.callout[data-callout="soylent"]    { --callout-color: 245, 158,  11; --callout-icon: lucide-building-2; }
+
+/* ============================================================
+   _COLOR_INDEX template — copy this block when adding a new account:
+
+   ACCOUNT SLUG  : <your-account-slug>  (lowercase, hyphens, matches folder name)
+   EXPLORER HEX  : #XXXXXX              (pick from suggested palette above)
+   CALLOUT RGB   : R, G, B              (decimal, e.g. 6, 182, 212)
+
+   Then:
+   1. Add an explorer block above (copy any existing block, replace the slug + hex).
+   2. Add a callout line in the per-account callouts section (copy any existing line).
+   3. Enable this snippet in Settings → Appearance → CSS snippets.
+   4. Add the account slug to your account-aliases config if you use keyword matching.
+   ============================================================ */

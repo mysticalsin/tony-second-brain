@@ -22,14 +22,96 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
 import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
+
+
+# ── Atomic-write + advisory-lock helpers (CC-007/CC-008) ─────────────────────
+# Two agents running triage concurrently over OneDrive can interleave reads and
+# writes on the same JSON file, producing a corrupt last-write-wins result.
+# Strategy:
+#   - atomic_write_json(): write to a sibling temp file then os.replace() — on
+#     POSIX this is rename(2), which is atomic even across NFS/APFS.
+#   - _lock_path / lock_file(): a .lock sentinel beside the target file + fcntl
+#     LOCK_EX so two concurrent flock callers serialise; LOCK_NB lets a third
+#     agent detect contention and skip rather than hang.
+
+
+def _lock_path(p: Path) -> Path:
+    """Return the lockfile path for a given JSON target."""
+    return p.parent / (p.name + ".lock")
+
+
+class lock_file:  # noqa: N801  (context manager, lowercase by convention)
+    """Advisory exclusive lock on a sentinel file next to the target.
+
+    Usage:
+        with lock_file(path_to_json):
+            data = json.loads(path_to_json.read_text())
+            ...
+            atomic_write_json(path_to_json, data)
+
+    On POSIX, fcntl.flock is per-open-file-descriptor — safe across processes.
+    Falls back gracefully (no lock) when fcntl is unavailable (non-POSIX).
+    """
+
+    def __init__(self, target: Path) -> None:
+        self._lp = _lock_path(target)
+        self._fh = None
+
+    def __enter__(self) -> "lock_file":
+        try:
+            self._lp.parent.mkdir(parents=True, exist_ok=True)
+            self._fh = open(self._lp, "w")  # noqa: WPS515
+            fcntl.flock(self._fh, fcntl.LOCK_EX)
+        except (OSError, AttributeError):
+            # Non-POSIX or permission error — degrade gracefully (best-effort).
+            if self._fh:
+                self._fh.close()
+            self._fh = None
+        return self
+
+    def __exit__(self, *_) -> None:
+        if self._fh:
+            try:
+                fcntl.flock(self._fh, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            self._fh.close()
+            try:
+                self._lp.unlink()
+            except OSError:
+                pass
+
+
+def atomic_write_json(p: Path, data: object, indent: int = 2) -> None:
+    """Serialize *data* to JSON and atomically replace *p*.
+
+    Writes to a sibling temp file, then os.replace() — rename(2) on POSIX,
+    which is atomic. The caller is responsible for holding lock_file() around
+    the read-modify-write cycle so no two writers race on the same file.
+    """
+    p.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=p.parent, prefix=".tmp-" + p.name + "-")
+    try:
+        with os.fdopen(fd, "w") as fh:
+            json.dump(data, fh, indent=indent)
+            fh.write("\n")
+        os.replace(tmp, p)
+    except BaseException:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
 
 try:
     import jsonschema  # type: ignore
@@ -292,12 +374,18 @@ def mark_seen(agent: str, content_hash: str, source_run_id: str,
     """Record this (content_hash, source_run_id) pair in the seen-set."""
     if dry_run:
         return
-    runs = seen.setdefault(content_hash, [])
-    if source_run_id not in runs:
-        runs.append(source_run_id)
     p = _seen_path(agent)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(seen, indent=2) + "\n")
+    with lock_file(p):
+        # Re-read under lock to pick up any concurrent writes.
+        try:
+            current = json.loads(p.read_text())
+        except (OSError, json.JSONDecodeError):
+            current = seen
+        runs = current.setdefault(content_hash, [])
+        if source_run_id not in runs:
+            runs.append(source_run_id)
+        atomic_write_json(p, current)
 
 
 def record_replay_suppressed(agent: str, dry_run: bool = False) -> None:
@@ -305,16 +393,17 @@ def record_replay_suppressed(agent: str, dry_run: bool = False) -> None:
     if dry_run:
         return
     stats_path = VAULT / "_agent_state" / agent / "stats.json"
-    try:
-        stats = json.loads(stats_path.read_text())
-    except (OSError, json.JSONDecodeError):
-        stats = {"agent": agent, "all_time": {}, "by_day": {}}
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    all_time = stats.setdefault("all_time", {})
-    all_time["replays_suppressed"] = all_time.get("replays_suppressed", 0) + 1
-    by_day = stats.setdefault("by_day", {}).setdefault(today, {})
-    by_day["replays_suppressed"] = by_day.get("replays_suppressed", 0) + 1
-    stats_path.write_text(json.dumps(stats, indent=2) + "\n")
+    with lock_file(stats_path):
+        try:
+            stats = json.loads(stats_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            stats = {"agent": agent, "all_time": {}, "by_day": {}}
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        all_time = stats.setdefault("all_time", {})
+        all_time["replays_suppressed"] = all_time.get("replays_suppressed", 0) + 1
+        by_day = stats.setdefault("by_day", {}).setdefault(today, {})
+        by_day["replays_suppressed"] = by_day.get("replays_suppressed", 0) + 1
+        atomic_write_json(stats_path, stats)
 
 
 def _content_hash(text: str) -> str:
@@ -392,24 +481,25 @@ def record_agent_event(agent: str, event: dict, dry_run: bool = False) -> None:
         f.write(json.dumps(event) + "\n")
 
     # stats.json: rolling counters per action + last_active.
-    # Bucket setdefault first, then mutate — avoids Python LHS-vs-RHS evaluation
-    # surprises with chained setdefault on the same statement.
+    # Wrap in lock_file + atomic_write_json so concurrent agents don't interleave
+    # read-modify-write cycles and lose increments (CC-007/CC-008).
     stats_path = agent_dir / "stats.json"
-    try:
-        stats = json.loads(stats_path.read_text())
-    except (OSError, json.JSONDecodeError):
-        stats = {"agent": agent, "all_time": {}, "by_day": {}}
-    action = event.get("action", "unknown")
-    today = event["ts"][:10]
+    with lock_file(stats_path):
+        try:
+            stats = json.loads(stats_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            stats = {"agent": agent, "all_time": {}, "by_day": {}}
+        action = event.get("action", "unknown")
+        today = event["ts"][:10]
 
-    all_time = stats.setdefault("all_time", {})
-    all_time[action] = all_time.get(action, 0) + 1
+        all_time = stats.setdefault("all_time", {})
+        all_time[action] = all_time.get(action, 0) + 1
 
-    by_day = stats.setdefault("by_day", {}).setdefault(today, {})
-    by_day[action] = by_day.get(action, 0) + 1
+        by_day = stats.setdefault("by_day", {}).setdefault(today, {})
+        by_day[action] = by_day.get(action, 0) + 1
 
-    stats["last_active"] = event["ts"]
-    stats_path.write_text(json.dumps(stats, indent=2) + "\n")
+        stats["last_active"] = event["ts"]
+        atomic_write_json(stats_path, stats)
 
 
 def merge_learnings_into_agent_memory(agent: str, fm: dict, dry_run: bool = False) -> None:
@@ -429,42 +519,43 @@ def merge_learnings_into_agent_memory(agent: str, fm: dict, dry_run: bool = Fals
     if not memory_path.parent.exists():
         return  # unknown agent
 
-    try:
-        mem = json.loads(memory_path.read_text())
-    except (OSError, json.JSONDecodeError):
-        mem = {"agent": agent, "memory_version": 1, "last_updated": None,
-               "global_patterns": [], "per_account_knowledge": {},
-               "self_observations": [], "recent_learnings": []}
+    with lock_file(memory_path):
+        try:
+            mem = json.loads(memory_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            mem = {"agent": agent, "memory_version": 1, "last_updated": None,
+                   "global_patterns": [], "per_account_knowledge": {},
+                   "self_observations": [], "recent_learnings": []}
 
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    # recent_learnings as a ring buffer (50 entries). Dedupe by text content so
-    # re-running triage on the same write doesn't accumulate duplicates.
-    existing_texts = {(e.get("text") or "").strip().lower()
-                      for e in mem.get("recent_learnings") or []}
-    new_entries = []
-    for l in learnings:
-        if not l:
-            continue
-        if l.strip().lower() in existing_texts:
-            continue
-        new_entries.append({"date": today, "text": l, "source": "dust-write"})
-    mem["recent_learnings"] = (new_entries + mem.get("recent_learnings", []))[:50]
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        # recent_learnings as a ring buffer (50 entries). Dedupe by text content so
+        # re-running triage on the same write doesn't accumulate duplicates.
+        existing_texts = {(e.get("text") or "").strip().lower()
+                          for e in mem.get("recent_learnings") or []}
+        new_entries = []
+        for l in learnings:
+            if not l:
+                continue
+            if l.strip().lower() in existing_texts:
+                continue
+            new_entries.append({"date": today, "text": l, "source": "dust-write"})
+        mem["recent_learnings"] = (new_entries + mem.get("recent_learnings", []))[:50]
 
-    # global_patterns: merge with n_observations bump
-    existing = {p["pattern"].lower(): p for p in mem.get("global_patterns", [])}
-    for p in patterns + mistakes:
-        if not p:
-            continue
-        k = p.lower().strip()
-        if k in existing:
-            existing[k]["n_observations"] = existing[k].get("n_observations", 1) + 1
-            existing[k]["confidence"] = round(min(1.0, existing[k]["n_observations"] / 5.0), 2)
-        else:
-            existing[k] = {"pattern": p, "confidence": 0.2, "n_observations": 1, "first_seen": today}
-    mem["global_patterns"] = sorted(existing.values(), key=lambda x: -x.get("n_observations", 0))[:200]
+        # global_patterns: merge with n_observations bump
+        existing = {p["pattern"].lower(): p for p in mem.get("global_patterns", [])}
+        for p in patterns + mistakes:
+            if not p:
+                continue
+            k = p.lower().strip()
+            if k in existing:
+                existing[k]["n_observations"] = existing[k].get("n_observations", 1) + 1
+                existing[k]["confidence"] = round(min(1.0, existing[k]["n_observations"] / 5.0), 2)
+            else:
+                existing[k] = {"pattern": p, "confidence": 0.2, "n_observations": 1, "first_seen": today}
+        mem["global_patterns"] = sorted(existing.values(), key=lambda x: -x.get("n_observations", 0))[:200]
 
-    mem["last_updated"] = datetime.now(timezone.utc).isoformat()
-    memory_path.write_text(json.dumps(mem, indent=2) + "\n")
+        mem["last_updated"] = datetime.now(timezone.utc).isoformat()
+        atomic_write_json(memory_path, mem)
 
 
 # ── Citation-or-silence gate helpers (Holy-Shit #10) ─────────────────────────
@@ -700,12 +791,12 @@ def triage_file(p: Path, dry_run: bool = False) -> str:
             if ext_reason:
                 bits.append(ext_reason)
             reason = "; ".join(bits)
-            event["action"] = "hold-needs-confidentiality-check"
+            event["action"] = "hold-needs-confidentiality-guard"
             event["target"] = target
             event["reason"] = reason
             record_agent_event(agent, event, dry_run=dry_run)
             mark_seen(agent, c_hash, source_run_id, seen, dry_run=dry_run)
-            return (f"HOLD  {p.name}: {reason} — needs confidentiality check "
+            return (f"HOLD  {p.name}: {reason} — needs confidentiality-guard pass "
                     f"before promote (confidence={confidence})")
 
     # ── Citation-or-silence gate (Holy-Shit #10) ─────────────────────────────
@@ -738,6 +829,31 @@ def triage_file(p: Path, dry_run: bool = False) -> str:
             mark_seen(agent, c_hash, source_run_id, seen, dry_run=dry_run)
             return (f"HOLD  {p.name}: citation gate — {n} unsourced claim(s) "
                     f"(output_type={output_type}); add citation markers to clear")
+
+    # ── Conduct-provenance gate (Phase 2.2) ──────────────────────────────────
+    # Hold the self-promote failure class: an unresolved target_path placeholder
+    # ([TYPE_REQUIRED]/<slug>) — which would create a literal placeholder dir on promote —
+    # or an empty source_run_id. Flags to conduct-violations.jsonl for telemetry/dreaming.
+    _prov = None
+    if _re.search(r"(\[[A-Z_]+\]|<[a-zA-Z_]+>|TYPE_REQUIRED)", target):
+        _prov = "target_path has an unresolved placeholder"
+    elif not str(source_run_id).strip():
+        _prov = "empty source_run_id"
+    if _prov:
+        event["action"] = "hold-conduct-provenance"
+        event["target"] = target
+        event["reason"] = _prov
+        try:
+            _clog = VAULT / "99_Meta" / "conduct-violations.jsonl"
+            _clog.parent.mkdir(parents=True, exist_ok=True)
+            with _clog.open("a", encoding="utf-8") as _cf:
+                _cf.write(json.dumps({"ts": utcnow(), "source": "triage", "agent": agent,
+                    "rule": "11-SBAP-provenance", "severity": "high", "detail": _prov, "file": str(p)}) + "\n")
+        except Exception:
+            pass
+        record_agent_event(agent, event, dry_run=dry_run)
+        mark_seen(agent, c_hash, source_run_id, seen, dry_run=dry_run)
+        return f"HOLD  {p.name}: conduct-provenance — {_prov}"
 
     # Reputation-aware promotion: the bar floats per-agent (build/tools/reputation.py).
     theta, agent_R = reputation_theta(agent)
